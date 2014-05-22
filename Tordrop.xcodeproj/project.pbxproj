@@ -1,0 +1,481 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		2416F5BF192E590F00CC03FE /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2416F5BE192E590F00CC03FE /* Cocoa.framework */; };
+		2416F5C9192E590F00CC03FE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2416F5C7192E590F00CC03FE /* InfoPlist.strings */; };
+		2416F5CB192E590F00CC03FE /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 2416F5CA192E590F00CC03FE /* main.m */; };
+		2416F5CF192E590F00CC03FE /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = 2416F5CD192E590F00CC03FE /* Credits.rtf */; };
+		2416F5D2192E590F00CC03FE /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 2416F5D1192E590F00CC03FE /* AppDelegate.m */; };
+		2416F5D5192E590F00CC03FE /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2416F5D3192E590F00CC03FE /* MainMenu.xib */; };
+		2416F5D7192E590F00CC03FE /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2416F5D6192E590F00CC03FE /* Images.xcassets */; };
+		2416F5DE192E590F00CC03FE /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2416F5DD192E590F00CC03FE /* XCTest.framework */; };
+		2416F5DF192E590F00CC03FE /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2416F5BE192E590F00CC03FE /* Cocoa.framework */; };
+		2416F5E7192E590F00CC03FE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2416F5E5192E590F00CC03FE /* InfoPlist.strings */; };
+		2416F5E9192E590F00CC03FE /* TordropTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 2416F5E8192E590F00CC03FE /* TordropTests.m */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		2416F5E0192E590F00CC03FE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 2416F5B3192E590F00CC03FE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2416F5BA192E590F00CC03FE;
+			remoteInfo = Tordrop;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		2416F5BB192E590F00CC03FE /* Tordrop.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tordrop.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		2416F5BE192E590F00CC03FE /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		2416F5C1192E590F00CC03FE /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		2416F5C2192E590F00CC03FE /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		2416F5C3192E590F00CC03FE /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		2416F5C6192E590F00CC03FE /* Tordrop-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Tordrop-Info.plist"; sourceTree = "<group>"; };
+		2416F5C8192E590F00CC03FE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		2416F5CA192E590F00CC03FE /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		2416F5CC192E590F00CC03FE /* Tordrop-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Tordrop-Prefix.pch"; sourceTree = "<group>"; };
+		2416F5CE192E590F00CC03FE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = en; path = en.lproj/Credits.rtf; sourceTree = "<group>"; };
+		2416F5D0192E590F00CC03FE /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		2416F5D1192E590F00CC03FE /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		2416F5D4192E590F00CC03FE /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		2416F5D6192E590F00CC03FE /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
+		2416F5DC192E590F00CC03FE /* TordropTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TordropTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2416F5DD192E590F00CC03FE /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		2416F5E4192E590F00CC03FE /* TordropTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TordropTests-Info.plist"; sourceTree = "<group>"; };
+		2416F5E6192E590F00CC03FE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		2416F5E8192E590F00CC03FE /* TordropTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TordropTests.m; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		2416F5B8192E590F00CC03FE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2416F5BF192E590F00CC03FE /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2416F5D9192E590F00CC03FE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2416F5DF192E590F00CC03FE /* Cocoa.framework in Frameworks */,
+				2416F5DE192E590F00CC03FE /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2416F5B2192E590F00CC03FE = {
+			isa = PBXGroup;
+			children = (
+				2416F5C4192E590F00CC03FE /* Tordrop */,
+				2416F5E2192E590F00CC03FE /* TordropTests */,
+				2416F5BD192E590F00CC03FE /* Frameworks */,
+				2416F5BC192E590F00CC03FE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2416F5BC192E590F00CC03FE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5BB192E590F00CC03FE /* Tordrop.app */,
+				2416F5DC192E590F00CC03FE /* TordropTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2416F5BD192E590F00CC03FE /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5BE192E590F00CC03FE /* Cocoa.framework */,
+				2416F5DD192E590F00CC03FE /* XCTest.framework */,
+				2416F5C0192E590F00CC03FE /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2416F5C0192E590F00CC03FE /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5C1192E590F00CC03FE /* AppKit.framework */,
+				2416F5C2192E590F00CC03FE /* CoreData.framework */,
+				2416F5C3192E590F00CC03FE /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		2416F5C4192E590F00CC03FE /* Tordrop */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5D0192E590F00CC03FE /* AppDelegate.h */,
+				2416F5D1192E590F00CC03FE /* AppDelegate.m */,
+				2416F5D3192E590F00CC03FE /* MainMenu.xib */,
+				2416F5D6192E590F00CC03FE /* Images.xcassets */,
+				2416F5C5192E590F00CC03FE /* Supporting Files */,
+			);
+			path = Tordrop;
+			sourceTree = "<group>";
+		};
+		2416F5C5192E590F00CC03FE /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5C6192E590F00CC03FE /* Tordrop-Info.plist */,
+				2416F5C7192E590F00CC03FE /* InfoPlist.strings */,
+				2416F5CA192E590F00CC03FE /* main.m */,
+				2416F5CC192E590F00CC03FE /* Tordrop-Prefix.pch */,
+				2416F5CD192E590F00CC03FE /* Credits.rtf */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		2416F5E2192E590F00CC03FE /* TordropTests */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5E8192E590F00CC03FE /* TordropTests.m */,
+				2416F5E3192E590F00CC03FE /* Supporting Files */,
+			);
+			path = TordropTests;
+			sourceTree = "<group>";
+		};
+		2416F5E3192E590F00CC03FE /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5E4192E590F00CC03FE /* TordropTests-Info.plist */,
+				2416F5E5192E590F00CC03FE /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		2416F5BA192E590F00CC03FE /* Tordrop */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2416F5EC192E590F00CC03FE /* Build configuration list for PBXNativeTarget "Tordrop" */;
+			buildPhases = (
+				2416F5B7192E590F00CC03FE /* Sources */,
+				2416F5B8192E590F00CC03FE /* Frameworks */,
+				2416F5B9192E590F00CC03FE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Tordrop;
+			productName = Tordrop;
+			productReference = 2416F5BB192E590F00CC03FE /* Tordrop.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2416F5DB192E590F00CC03FE /* TordropTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2416F5EF192E590F00CC03FE /* Build configuration list for PBXNativeTarget "TordropTests" */;
+			buildPhases = (
+				2416F5D8192E590F00CC03FE /* Sources */,
+				2416F5D9192E590F00CC03FE /* Frameworks */,
+				2416F5DA192E590F00CC03FE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2416F5E1192E590F00CC03FE /* PBXTargetDependency */,
+			);
+			name = TordropTests;
+			productName = TordropTests;
+			productReference = 2416F5DC192E590F00CC03FE /* TordropTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		2416F5B3192E590F00CC03FE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+				ORGANIZATIONNAME = "Bandit Labs Cyf";
+				TargetAttributes = {
+					2416F5DB192E590F00CC03FE = {
+						TestTargetID = 2416F5BA192E590F00CC03FE;
+					};
+				};
+			};
+			buildConfigurationList = 2416F5B6192E590F00CC03FE /* Build configuration list for PBXProject "Tordrop" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2416F5B2192E590F00CC03FE;
+			productRefGroup = 2416F5BC192E590F00CC03FE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				2416F5BA192E590F00CC03FE /* Tordrop */,
+				2416F5DB192E590F00CC03FE /* TordropTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		2416F5B9192E590F00CC03FE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2416F5C9192E590F00CC03FE /* InfoPlist.strings in Resources */,
+				2416F5D7192E590F00CC03FE /* Images.xcassets in Resources */,
+				2416F5CF192E590F00CC03FE /* Credits.rtf in Resources */,
+				2416F5D5192E590F00CC03FE /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2416F5DA192E590F00CC03FE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2416F5E7192E590F00CC03FE /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2416F5B7192E590F00CC03FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2416F5D2192E590F00CC03FE /* AppDelegate.m in Sources */,
+				2416F5CB192E590F00CC03FE /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2416F5D8192E590F00CC03FE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2416F5E9192E590F00CC03FE /* TordropTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2416F5E1192E590F00CC03FE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2416F5BA192E590F00CC03FE /* Tordrop */;
+			targetProxy = 2416F5E0192E590F00CC03FE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		2416F5C7192E590F00CC03FE /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2416F5C8192E590F00CC03FE /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		2416F5CD192E590F00CC03FE /* Credits.rtf */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2416F5CE192E590F00CC03FE /* en */,
+			);
+			name = Credits.rtf;
+			sourceTree = "<group>";
+		};
+		2416F5D3192E590F00CC03FE /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2416F5D4192E590F00CC03FE /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+		2416F5E5192E590F00CC03FE /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2416F5E6192E590F00CC03FE /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		2416F5EA192E590F00CC03FE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		2416F5EB192E590F00CC03FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		2416F5ED192E590F00CC03FE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Tordrop/Tordrop-Prefix.pch";
+				INFOPLIST_FILE = "Tordrop/Tordrop-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		2416F5EE192E590F00CC03FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Tordrop/Tordrop-Prefix.pch";
+				INFOPLIST_FILE = "Tordrop/Tordrop-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		2416F5F0192E590F00CC03FE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Tordrop.app/Contents/MacOS/Tordrop";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Tordrop/Tordrop-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = "TordropTests/TordropTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		2416F5F1192E590F00CC03FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/Tordrop.app/Contents/MacOS/Tordrop";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "Tordrop/Tordrop-Prefix.pch";
+				INFOPLIST_FILE = "TordropTests/TordropTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2416F5B6192E590F00CC03FE /* Build configuration list for PBXProject "Tordrop" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2416F5EA192E590F00CC03FE /* Debug */,
+				2416F5EB192E590F00CC03FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2416F5EC192E590F00CC03FE /* Build configuration list for PBXNativeTarget "Tordrop" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2416F5ED192E590F00CC03FE /* Debug */,
+				2416F5EE192E590F00CC03FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		2416F5EF192E590F00CC03FE /* Build configuration list for PBXNativeTarget "TordropTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2416F5F0192E590F00CC03FE /* Debug */,
+				2416F5F1192E590F00CC03FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 2416F5B3192E590F00CC03FE /* Project object */;
+}
