@@ -50,6 +50,9 @@
 #pragma mark Drag View Delegate Methods
 
 - (void)didDragFiles:(NSArray *)files {
+    if (torManager) {
+        [self stopWebServer];
+    }
     self.filePath = [files objectAtIndex:0];
     torManager = [[TorManager alloc] init];
     torManager.delegate = self;

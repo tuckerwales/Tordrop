@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>11B0AD77-02F2-464B-A208-24E60C8A722A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>Tordrop</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>F8B7B5B7-1D70-4AF3-88C3-4AE324C75DFF</key>
+		<string>ssh://github.com/DarkMalloc/Tordrop.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>Tordrop.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>F8B7B5B7-1D70-4AF3-88C3-4AE324C75DFF</key>
+		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>ssh://github.com/DarkMalloc/Tordrop.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>F8B7B5B7-1D70-4AF3-88C3-4AE324C75DFF</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>F8B7B5B7-1D70-4AF3-88C3-4AE324C75DFF</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Tordrop</string>
+		</dict>
+	</array>
+</dict>
+</plist>
