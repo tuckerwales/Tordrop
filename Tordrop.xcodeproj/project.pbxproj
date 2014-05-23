@@ -18,6 +18,22 @@
 		2416F5DF192E590F00CC03FE /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2416F5BE192E590F00CC03FE /* Cocoa.framework */; };
 		2416F5E7192E590F00CC03FE /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2416F5E5192E590F00CC03FE /* InfoPlist.strings */; };
 		2416F5E9192E590F00CC03FE /* TordropTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 2416F5E8192E590F00CC03FE /* TordropTests.m */; };
+		2416F5F8192E5A2B00CC03FE /* TorManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 2416F5F7192E5A2B00CC03FE /* TorManager.m */; };
+		2437B859192EA4E300439538 /* GCDWebServer.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B83C192EA4E300439538 /* GCDWebServer.m */; };
+		2437B85A192EA4E300439538 /* GCDWebServerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B83E192EA4E300439538 /* GCDWebServerConnection.m */; };
+		2437B85B192EA4E300439538 /* GCDWebServerFunctions.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B840192EA4E300439538 /* GCDWebServerFunctions.m */; };
+		2437B85C192EA4E300439538 /* GCDWebServerRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B844192EA4E300439538 /* GCDWebServerRequest.m */; };
+		2437B85D192EA4E300439538 /* GCDWebServerResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B846192EA4E300439538 /* GCDWebServerResponse.m */; };
+		2437B85E192EA4E300439538 /* GCDWebServerDataRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B849192EA4E300439538 /* GCDWebServerDataRequest.m */; };
+		2437B85F192EA4E300439538 /* GCDWebServerFileRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B84B192EA4E300439538 /* GCDWebServerFileRequest.m */; };
+		2437B860192EA4E300439538 /* GCDWebServerMultiPartFormRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B84D192EA4E300439538 /* GCDWebServerMultiPartFormRequest.m */; };
+		2437B861192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B84F192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.m */; };
+		2437B862192EA4E300439538 /* GCDWebServerDataResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B852192EA4E300439538 /* GCDWebServerDataResponse.m */; };
+		2437B863192EA4E300439538 /* GCDWebServerErrorResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B854192EA4E300439538 /* GCDWebServerErrorResponse.m */; };
+		2437B864192EA4E300439538 /* GCDWebServerFileResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B856192EA4E300439538 /* GCDWebServerFileResponse.m */; };
+		2437B865192EA4E300439538 /* GCDWebServerStreamedResponse.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B858192EA4E300439538 /* GCDWebServerStreamedResponse.m */; };
+		2437B867192EA50500439538 /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 2437B866192EA50500439538 /* libz.dylib */; };
+		2437B86A192EAB8200439538 /* DragStatusView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2437B869192EAB8200439538 /* DragStatusView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +66,39 @@
 		2416F5E4192E590F00CC03FE /* TordropTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TordropTests-Info.plist"; sourceTree = "<group>"; };
 		2416F5E6192E590F00CC03FE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		2416F5E8192E590F00CC03FE /* TordropTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TordropTests.m; sourceTree = "<group>"; };
+		2416F5F6192E5A2B00CC03FE /* TorManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TorManager.h; sourceTree = "<group>"; };
+		2416F5F7192E5A2B00CC03FE /* TorManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TorManager.m; sourceTree = "<group>"; };
+		2437B83B192EA4E300439538 /* GCDWebServer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServer.h; sourceTree = "<group>"; };
+		2437B83C192EA4E300439538 /* GCDWebServer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServer.m; sourceTree = "<group>"; };
+		2437B83D192EA4E300439538 /* GCDWebServerConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerConnection.h; sourceTree = "<group>"; };
+		2437B83E192EA4E300439538 /* GCDWebServerConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerConnection.m; sourceTree = "<group>"; };
+		2437B83F192EA4E300439538 /* GCDWebServerFunctions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerFunctions.h; sourceTree = "<group>"; };
+		2437B840192EA4E300439538 /* GCDWebServerFunctions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerFunctions.m; sourceTree = "<group>"; };
+		2437B841192EA4E300439538 /* GCDWebServerHTTPStatusCodes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerHTTPStatusCodes.h; sourceTree = "<group>"; };
+		2437B842192EA4E300439538 /* GCDWebServerPrivate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerPrivate.h; sourceTree = "<group>"; };
+		2437B843192EA4E300439538 /* GCDWebServerRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerRequest.h; sourceTree = "<group>"; };
+		2437B844192EA4E300439538 /* GCDWebServerRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerRequest.m; sourceTree = "<group>"; };
+		2437B845192EA4E300439538 /* GCDWebServerResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerResponse.h; sourceTree = "<group>"; };
+		2437B846192EA4E300439538 /* GCDWebServerResponse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerResponse.m; sourceTree = "<group>"; };
+		2437B848192EA4E300439538 /* GCDWebServerDataRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerDataRequest.h; sourceTree = "<group>"; };
+		2437B849192EA4E300439538 /* GCDWebServerDataRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerDataRequest.m; sourceTree = "<group>"; };
+		2437B84A192EA4E300439538 /* GCDWebServerFileRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerFileRequest.h; sourceTree = "<group>"; };
+		2437B84B192EA4E300439538 /* GCDWebServerFileRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerFileRequest.m; sourceTree = "<group>"; };
+		2437B84C192EA4E300439538 /* GCDWebServerMultiPartFormRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerMultiPartFormRequest.h; sourceTree = "<group>"; };
+		2437B84D192EA4E300439538 /* GCDWebServerMultiPartFormRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerMultiPartFormRequest.m; sourceTree = "<group>"; };
+		2437B84E192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerURLEncodedFormRequest.h; sourceTree = "<group>"; };
+		2437B84F192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerURLEncodedFormRequest.m; sourceTree = "<group>"; };
+		2437B851192EA4E300439538 /* GCDWebServerDataResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerDataResponse.h; sourceTree = "<group>"; };
+		2437B852192EA4E300439538 /* GCDWebServerDataResponse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerDataResponse.m; sourceTree = "<group>"; };
+		2437B853192EA4E300439538 /* GCDWebServerErrorResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerErrorResponse.h; sourceTree = "<group>"; };
+		2437B854192EA4E300439538 /* GCDWebServerErrorResponse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerErrorResponse.m; sourceTree = "<group>"; };
+		2437B855192EA4E300439538 /* GCDWebServerFileResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerFileResponse.h; sourceTree = "<group>"; };
+		2437B856192EA4E300439538 /* GCDWebServerFileResponse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerFileResponse.m; sourceTree = "<group>"; };
+		2437B857192EA4E300439538 /* GCDWebServerStreamedResponse.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GCDWebServerStreamedResponse.h; sourceTree = "<group>"; };
+		2437B858192EA4E300439538 /* GCDWebServerStreamedResponse.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GCDWebServerStreamedResponse.m; sourceTree = "<group>"; };
+		2437B866192EA50500439538 /* libz.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.dylib; path = usr/lib/libz.dylib; sourceTree = SDKROOT; };
+		2437B868192EAB8200439538 /* DragStatusView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DragStatusView.h; sourceTree = "<group>"; };
+		2437B869192EAB8200439538 /* DragStatusView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DragStatusView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,6 +106,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2437B867192EA50500439538 /* libz.dylib in Frameworks */,
 				2416F5BF192E590F00CC03FE /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -76,6 +126,7 @@
 		2416F5B2192E590F00CC03FE = {
 			isa = PBXGroup;
 			children = (
+				2437B839192EA4E300439538 /* GCDWebServer */,
 				2416F5C4192E590F00CC03FE /* Tordrop */,
 				2416F5E2192E590F00CC03FE /* TordropTests */,
 				2416F5BD192E590F00CC03FE /* Frameworks */,
@@ -95,6 +146,7 @@
 		2416F5BD192E590F00CC03FE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				2437B866192EA50500439538 /* libz.dylib */,
 				2416F5BE192E590F00CC03FE /* Cocoa.framework */,
 				2416F5DD192E590F00CC03FE /* XCTest.framework */,
 				2416F5C0192E590F00CC03FE /* Other Frameworks */,
@@ -115,8 +167,11 @@
 		2416F5C4192E590F00CC03FE /* Tordrop */ = {
 			isa = PBXGroup;
 			children = (
+				2416F5F9192E5A2F00CC03FE /* TorManager */,
 				2416F5D0192E590F00CC03FE /* AppDelegate.h */,
 				2416F5D1192E590F00CC03FE /* AppDelegate.m */,
+				2437B868192EAB8200439538 /* DragStatusView.h */,
+				2437B869192EAB8200439538 /* DragStatusView.m */,
 				2416F5D3192E590F00CC03FE /* MainMenu.xib */,
 				2416F5D6192E590F00CC03FE /* Images.xcassets */,
 				2416F5C5192E590F00CC03FE /* Supporting Files */,
@@ -152,6 +207,74 @@
 				2416F5E5192E590F00CC03FE /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		2416F5F9192E5A2F00CC03FE /* TorManager */ = {
+			isa = PBXGroup;
+			children = (
+				2416F5F6192E5A2B00CC03FE /* TorManager.h */,
+				2416F5F7192E5A2B00CC03FE /* TorManager.m */,
+			);
+			name = TorManager;
+			sourceTree = "<group>";
+		};
+		2437B839192EA4E300439538 /* GCDWebServer */ = {
+			isa = PBXGroup;
+			children = (
+				2437B83A192EA4E300439538 /* Core */,
+				2437B847192EA4E300439538 /* Requests */,
+				2437B850192EA4E300439538 /* Responses */,
+			);
+			path = GCDWebServer;
+			sourceTree = "<group>";
+		};
+		2437B83A192EA4E300439538 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				2437B83B192EA4E300439538 /* GCDWebServer.h */,
+				2437B83C192EA4E300439538 /* GCDWebServer.m */,
+				2437B83D192EA4E300439538 /* GCDWebServerConnection.h */,
+				2437B83E192EA4E300439538 /* GCDWebServerConnection.m */,
+				2437B83F192EA4E300439538 /* GCDWebServerFunctions.h */,
+				2437B840192EA4E300439538 /* GCDWebServerFunctions.m */,
+				2437B841192EA4E300439538 /* GCDWebServerHTTPStatusCodes.h */,
+				2437B842192EA4E300439538 /* GCDWebServerPrivate.h */,
+				2437B843192EA4E300439538 /* GCDWebServerRequest.h */,
+				2437B844192EA4E300439538 /* GCDWebServerRequest.m */,
+				2437B845192EA4E300439538 /* GCDWebServerResponse.h */,
+				2437B846192EA4E300439538 /* GCDWebServerResponse.m */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		2437B847192EA4E300439538 /* Requests */ = {
+			isa = PBXGroup;
+			children = (
+				2437B848192EA4E300439538 /* GCDWebServerDataRequest.h */,
+				2437B849192EA4E300439538 /* GCDWebServerDataRequest.m */,
+				2437B84A192EA4E300439538 /* GCDWebServerFileRequest.h */,
+				2437B84B192EA4E300439538 /* GCDWebServerFileRequest.m */,
+				2437B84C192EA4E300439538 /* GCDWebServerMultiPartFormRequest.h */,
+				2437B84D192EA4E300439538 /* GCDWebServerMultiPartFormRequest.m */,
+				2437B84E192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.h */,
+				2437B84F192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.m */,
+			);
+			path = Requests;
+			sourceTree = "<group>";
+		};
+		2437B850192EA4E300439538 /* Responses */ = {
+			isa = PBXGroup;
+			children = (
+				2437B851192EA4E300439538 /* GCDWebServerDataResponse.h */,
+				2437B852192EA4E300439538 /* GCDWebServerDataResponse.m */,
+				2437B853192EA4E300439538 /* GCDWebServerErrorResponse.h */,
+				2437B854192EA4E300439538 /* GCDWebServerErrorResponse.m */,
+				2437B855192EA4E300439538 /* GCDWebServerFileResponse.h */,
+				2437B856192EA4E300439538 /* GCDWebServerFileResponse.m */,
+				2437B857192EA4E300439538 /* GCDWebServerStreamedResponse.h */,
+				2437B858192EA4E300439538 /* GCDWebServerStreamedResponse.m */,
+			);
+			path = Responses;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -252,8 +375,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2437B865192EA4E300439538 /* GCDWebServerStreamedResponse.m in Sources */,
+				2437B86A192EAB8200439538 /* DragStatusView.m in Sources */,
+				2437B860192EA4E300439538 /* GCDWebServerMultiPartFormRequest.m in Sources */,
+				2437B862192EA4E300439538 /* GCDWebServerDataResponse.m in Sources */,
+				2437B863192EA4E300439538 /* GCDWebServerErrorResponse.m in Sources */,
+				2437B859192EA4E300439538 /* GCDWebServer.m in Sources */,
+				2437B864192EA4E300439538 /* GCDWebServerFileResponse.m in Sources */,
 				2416F5D2192E590F00CC03FE /* AppDelegate.m in Sources */,
+				2437B85B192EA4E300439538 /* GCDWebServerFunctions.m in Sources */,
+				2437B85D192EA4E300439538 /* GCDWebServerResponse.m in Sources */,
+				2437B85A192EA4E300439538 /* GCDWebServerConnection.m in Sources */,
 				2416F5CB192E590F00CC03FE /* main.m in Sources */,
+				2437B861192EA4E300439538 /* GCDWebServerURLEncodedFormRequest.m in Sources */,
+				2437B85F192EA4E300439538 /* GCDWebServerFileRequest.m in Sources */,
+				2437B85C192EA4E300439538 /* GCDWebServerRequest.m in Sources */,
+				2416F5F8192E5A2B00CC03FE /* TorManager.m in Sources */,
+				2437B85E192EA4E300439538 /* GCDWebServerDataRequest.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -385,6 +523,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Tordrop/Tordrop-Prefix.pch";
@@ -398,6 +537,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_OBJC_ARC = YES;
 				COMBINE_HIDPI_IMAGES = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Tordrop/Tordrop-Prefix.pch";
@@ -466,6 +606,7 @@
 				2416F5EE192E590F00CC03FE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		2416F5EF192E590F00CC03FE /* Build configuration list for PBXNativeTarget "TordropTests" */ = {
 			isa = XCConfigurationList;
@@ -474,6 +615,7 @@
 				2416F5F1192E590F00CC03FE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
