@@ -20,7 +20,7 @@
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
     
     statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    DragStatusView *dragView = [[DragStatusView alloc] initWithFrame:NSMakeRect(0, 0, 16, 16)];
+    DragStatusView *dragView = [[DragStatusView alloc] initWithFrame:NSMakeRect(0, 0, 16, 16)]; // handles drag and drop.
     dragView.delegate = self;
     dragView.statusItem = statusItem;
     [statusItem setView:dragView];
@@ -50,7 +50,7 @@
 #pragma mark Drag View Delegate Methods
 
 - (void)didDragFiles:(NSArray *)files {
-    if (torManager) {
+    if (torManager) { // reconnect/restart services to share new file.
         [self stopWebServer];
     }
     self.filePath = [files objectAtIndex:0];
@@ -75,13 +75,12 @@
 - (void)setupWebServer {
     webServer = [[GCDWebServer alloc] init];
     __weak typeof (filePath)weakFilePath = filePath; // avoid retain cycle from capturing self within block.
-    NSString *sha1 = [self getSHA1];
-    NSLog(@"SHA1: %@", sha1);
+    NSString *sha1 = [self getSHA1]; // returns sha1 of file at filePath.
     [webServer addDefaultHandlerForMethod:@"GET" requestClass:[GCDWebServerRequest class] processBlock:^GCDWebServerResponse *(GCDWebServerRequest *request) {
         NSString *htmlString = [NSString stringWithFormat:@"<html><head><title>Tordrop</title><style type=\"text/css\"> body { margin: 0; padding: 0; background-color: #faf9f0; color: #444; font-family: \"Helvetica\"; } .header { padding: 50px 10px; color: #fff; font-size: 25px; text-align: center; background-color: #fa5b4d; border-bottom: 1px solid #000; text-shadow: 0px 1px 0px #000; } .container { width: 900px; margin: 50px auto; overflow: hidden; text-align: center; } </style></head><body><div class=\"header\"><h1>Tordrop</h1></div><div class=\"container\">Hello, someone has shared %@ with you! <br><br> Please click the following link to download the file: <br><br><a href=\"%@\">Download</a><br><br>SHA1: %@</div></body></html>", [weakFilePath lastPathComponent], [weakFilePath lastPathComponent], sha1];
         return [GCDWebServerDataResponse responseWithHTML:htmlString];
     }];
-    [webServer addGETHandlerForPath:[NSString stringWithFormat:@"/%@", [filePath lastPathComponent]] staticData:[[NSData alloc] initWithContentsOfFile:filePath] contentType:@"application/octet-stream" cacheAge:0];
+    [webServer addGETHandlerForPath:[NSString stringWithFormat:@"/%@", [filePath lastPathComponent]] staticData:[[NSData alloc] initWithContentsOfFile:filePath] contentType:@"application/octet-stream" cacheAge:0]; // actually handles download of file.
     [webServer setPort:onionPort];
     [webServer start];
     [statusMenu removeItemAtIndex:2]; // need to do this in a convoluted manner because of the lack of an insertAtIndex: method.
