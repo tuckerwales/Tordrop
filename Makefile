@@ -1,4 +1,4 @@
-.PHONY: all build app run clean icon
+.PHONY: all build app run clean icon sign
 
 APP_NAME   := TorDrop
 BUILD_DIR  := .build/release
@@ -6,6 +6,12 @@ APP_BUNDLE := $(APP_NAME).app
 LOGO       := Resources/AppIcon.png
 ICONSET    := .build/AppIcon.iconset
 ICNS       := .build/AppIcon.icns
+CODESIGN_IDENTITY ?= -
+CODESIGN_FLAGS := --force --deep --options runtime
+
+ifneq ($(CODESIGN_IDENTITY),-)
+CODESIGN_FLAGS += --timestamp
+endif
 
 all: app
 
@@ -36,7 +42,12 @@ app: build icon
 	cp $(BUILD_DIR)/$(APP_NAME) $(APP_BUNDLE)/Contents/MacOS/$(APP_NAME)
 	cp Info.plist $(APP_BUNDLE)/Contents/Info.plist
 	cp $(ICNS) $(APP_BUNDLE)/Contents/Resources/AppIcon.icns
+	$(MAKE) sign
 	@echo "Built $(APP_BUNDLE)"
+
+sign:
+	codesign $(CODESIGN_FLAGS) --sign "$(CODESIGN_IDENTITY)" $(APP_BUNDLE)
+	codesign --verify --deep --strict --verbose=2 $(APP_BUNDLE)
 
 run: app
 	open $(APP_BUNDLE)

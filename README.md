@@ -52,7 +52,29 @@ Or during development:
 swift run -c release
 ```
 
-The first launch might prompt for network permissions (the local listener and the outbound connection `tor` makes). Because the app isn't code-signed by default, you may need to right-click → Open the first time.
+The first launch might prompt for network permissions (the local listener and the outbound connection `tor` makes). Local development builds are ad-hoc signed, so you may need to right-click → Open the first time.
+
+## Release signing
+
+`make app` always signs and verifies the app bundle. By default it uses an ad-hoc signature, which does not identify the developer but does produce a sealed app bundle. Downloaded ad-hoc releases should trigger a Gatekeeper warning such as "unidentified developer" rather than "damaged".
+
+Users can open ad-hoc releases with right-click → Open. If macOS still reports that a downloaded ad-hoc build is damaged, remove the download quarantine attribute:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/TorDrop.app
+```
+
+Developer ID signing and notarization are optional. They remove the Gatekeeper warning for public releases, but require a paid Apple Developer account.
+
+The GitHub release workflow will use Developer ID signing and notarization when these repository secrets are configured:
+
+- `APPLE_CERTIFICATE_P12_BASE64`: base64-encoded Developer ID Application `.p12`
+- `APPLE_CERTIFICATE_PASSWORD`: password for the `.p12`
+- `APPLE_DEVELOPER_ID_APPLICATION`: signing identity, for example `Developer ID Application: Example, Inc. (TEAMID1234)`
+- `KEYCHAIN_PASSWORD`: temporary CI keychain password
+- `APPLE_NOTARY_KEY`: App Store Connect API private key contents
+- `APPLE_NOTARY_KEY_ID`: App Store Connect API key ID
+- `APPLE_NOTARY_ISSUER_ID`: App Store Connect issuer ID
 
 ## Project layout
 

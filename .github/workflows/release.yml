@@ -17,8 +17,37 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
+      - name: Import Developer ID certificate
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          if [ -z "$APPLE_CERTIFICATE_P12_BASE64" ]; then
+            echo "No Developer ID certificate configured; using ad-hoc signing."
+            exit 0
+          fi
+
+          CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN_PATH="$RUNNER_TEMP/app-signing.keychain-db"
+
+          echo "$APPLE_CERTIFICATE_P12_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
       - name: Build app bundle
-        run: make app
+        env:
+          APPLE_DEVELOPER_ID_APPLICATION: ${{ secrets.APPLE_DEVELOPER_ID_APPLICATION }}
+        run: |
+          if [ -n "$APPLE_DEVELOPER_ID_APPLICATION" ]; then
+            make app CODESIGN_IDENTITY="$APPLE_DEVELOPER_ID_APPLICATION"
+          else
+            make app
+          fi
 
       - name: Read version
         id: version
@@ -30,8 +59,52 @@ jobs:
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Package app bundle
+        env:
+          APPLE_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
         run: |
+          if [ -z "$APPLE_NOTARY_KEY" ] || [ -z "$APPLE_NOTARY_KEY_ID" ] || [ -z "$APPLE_NOTARY_ISSUER_ID" ]; then
+            mkdir -p unsigned-release
+            cp -R TorDrop.app unsigned-release/
+            cat > "README-unsigned-release.txt" <<'EOF'
+          This TorDrop build is ad-hoc signed, not Developer ID signed or notarized.
+
+          macOS may warn that it cannot verify the developer. Open it with right-click -> Open.
+
+          If macOS says the app is damaged, remove the download quarantine attribute:
+
+              xattr -dr com.apple.quarantine /Applications/TorDrop.app
+          EOF
+            mv README-unsigned-release.txt unsigned-release/
+            ditto -c -k --sequesterRsrc unsigned-release "TorDrop-${{ steps.version.outputs.tag }}.zip"
+          else
+            ditto -c -k --sequesterRsrc --keepParent TorDrop.app "TorDrop-${{ steps.version.outputs.tag }}.zip"
+          fi
+
+      - name: Notarize release zip
+        env:
+          APPLE_NOTARY_KEY: ${{ secrets.APPLE_NOTARY_KEY }}
+          APPLE_NOTARY_KEY_ID: ${{ secrets.APPLE_NOTARY_KEY_ID }}
+          APPLE_NOTARY_ISSUER_ID: ${{ secrets.APPLE_NOTARY_ISSUER_ID }}
+        run: |
+          if [ -z "$APPLE_NOTARY_KEY" ] || [ -z "$APPLE_NOTARY_KEY_ID" ] || [ -z "$APPLE_NOTARY_ISSUER_ID" ]; then
+            echo "No notarization credentials configured; skipping notarization."
+            exit 0
+          fi
+
+          NOTARY_KEY_PATH="$RUNNER_TEMP/AuthKey_$APPLE_NOTARY_KEY_ID.p8"
+          printf '%s' "$APPLE_NOTARY_KEY" > "$NOTARY_KEY_PATH"
+
+          xcrun notarytool submit "TorDrop-${{ steps.version.outputs.tag }}.zip" \
+            --key "$NOTARY_KEY_PATH" \
+            --key-id "$APPLE_NOTARY_KEY_ID" \
+            --issuer "$APPLE_NOTARY_ISSUER_ID" \
+            --wait
+
+          xcrun stapler staple TorDrop.app
           ditto -c -k --sequesterRsrc --keepParent TorDrop.app "TorDrop-${{ steps.version.outputs.tag }}.zip"
+          spctl --assess --type execute --verbose=4 TorDrop.app
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
