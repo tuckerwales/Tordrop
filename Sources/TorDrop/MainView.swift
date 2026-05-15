@@ -1,53 +1,64 @@
 import SwiftUI
 import AppKit
+import UniformTypeIdentifiers
 
 private enum Palette {
     static let accent = Color(red: 0.55, green: 0.36, blue: 0.96)
     static let accentSoft = Color(red: 0.55, green: 0.36, blue: 0.96).opacity(0.16)
+    static let panel = Color.primary.opacity(0.045)
+    static let panelStroke = Color.primary.opacity(0.09)
     static let good = Color(red: 0.22, green: 0.78, blue: 0.45)
     static let danger = Color(red: 0.95, green: 0.37, blue: 0.42)
 }
 
-struct PopoverView: View {
+struct MainView: View {
     @ObservedObject private var state = ShareState.shared
     @State private var showingLog = false
     @State private var copied = false
+    @State private var isDropTarget = false
     let onQuit: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
-            header
-            Divider().opacity(0.4)
+            topBar
             content
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-            Spacer(minLength: 0)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 24)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             if showingLog { logPanel }
-            footer
+            bottomBar
         }
-        .frame(width: 400, height: 520)
+        .frame(minWidth: 520, idealWidth: 720, minHeight: 500, idealHeight: 560)
+        .onDrop(of: [UTType.fileURL.identifier], isTargeted: $isDropTarget, perform: handleDrop)
         .animation(.easeInOut(duration: 0.18), value: state.status)
         .animation(.easeInOut(duration: 0.18), value: showingLog)
+        .animation(.easeInOut(duration: 0.12), value: isDropTarget)
     }
 
-    // MARK: Header
+    // MARK: Chrome
 
-    private var header: some View {
-        HStack(spacing: 10) {
-            Text("TorDrop")
-                .font(.system(size: 15, weight: .semibold))
-            statusPill
-            Spacer()
-            Button(action: onQuit) {
-                Image(systemName: "power")
-                    .font(.system(size: 13, weight: .medium))
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            if isActive || isError {
+                statusPill
             }
-            .buttonStyle(.borderless)
-            .foregroundStyle(.secondary)
-            .help("Quit TorDrop")
+            Spacer()
+            if isActive {
+                Button(role: .destructive) {
+                    Task { await ShareManager.shared.stop() }
+                } label: {
+                    Label("Stop Sharing", systemImage: "stop.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .controlSize(.regular)
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.danger)
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 28)
+        .frame(height: isActive || isError ? 52 : 1)
+        .background(.bar)
+        .overlay(Divider().opacity(0.35), alignment: .bottom)
     }
 
     private var statusPill: some View {
@@ -67,8 +78,8 @@ struct PopoverView: View {
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
         .background(
             Capsule(style: .continuous).fill(.quaternary.opacity(0.5))
         )
@@ -98,59 +109,77 @@ struct PopoverView: View {
     // MARK: Idle
 
     private var idleContent: some View {
-        VStack(spacing: 14) {
-            VStack(spacing: 10) {
+        VStack(spacing: 20) {
+            Spacer(minLength: 0)
+
+            VStack(spacing: 8) {
+                Text("Share files over Tor")
+                    .font(.system(size: 28, weight: .semibold))
+                Text("Drop files into this window or choose them from your Mac.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.top, 10)
+
+            VStack(spacing: 18) {
                 ZStack {
                     Circle()
                         .fill(Palette.accentSoft)
-                        .frame(width: 54, height: 54)
+                        .frame(width: 76, height: 76)
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 30))
+                        .font(.system(size: 42))
                         .foregroundStyle(Palette.accent)
                         .symbolRenderingMode(.hierarchical)
                 }
-                VStack(spacing: 2) {
-                    Text("Share files over Tor")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Drop files onto the menu bar icon,\nor choose from your Mac.")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
 
-            Button {
-                pickFiles()
-            } label: {
-                Label("Choose Files…", systemImage: "folder")
-                    .frame(maxWidth: .infinity)
+                Button {
+                    pickFiles()
+                } label: {
+                    Label("Choose Files...", systemImage: "folder")
+                        .font(.system(size: 14, weight: .semibold))
+                        .frame(width: 220)
+                }
+                .controlSize(.large)
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.accent)
             }
-            .controlSize(.large)
-            .buttonStyle(.borderedProminent)
-            .tint(Palette.accent)
+            .frame(maxWidth: .infinity, minHeight: 250)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(isDropTarget ? Palette.accentSoft : Color.primary.opacity(0.035))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        Palette.accent.opacity(isDropTarget ? 0.75 : 0.32),
+                        style: StrokeStyle(lineWidth: 1.5, dash: [7, 5])
+                    )
+            )
 
             Text("Files stay on your Mac. Only someone with the generated URL can reach them — routed through Tor, no servers in between.")
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 24)
+
+            Spacer(minLength: 0)
         }
+        .frame(maxHeight: .infinity)
     }
 
     // MARK: Starting — progress state
 
     private func startingContent(_ msg: String) -> some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 18) {
             ZStack {
                 Circle()
                     .stroke(Palette.accentSoft, lineWidth: 3)
-                    .frame(width: 72, height: 72)
+                    .frame(width: 92, height: 92)
                 Circle()
                     .trim(from: 0, to: 0.35)
                     .stroke(Palette.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 72, height: 72)
+                    .frame(width: 92, height: 92)
                     .rotationEffect(.degrees(spin))
                     .onAppear {
                         withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false)) {
@@ -158,20 +187,22 @@ struct PopoverView: View {
                         }
                     }
                 Image(systemName: "network")
-                    .font(.system(size: 22, weight: .medium))
+                    .font(.system(size: 28, weight: .medium))
                     .foregroundStyle(Palette.accent)
             }
+            Text("Preparing your share")
+                .font(.system(size: 24, weight: .semibold))
             Text(msg)
-                .font(.system(size: 12))
+                .font(.system(size: 14))
                 .foregroundStyle(.secondary)
             Text("Bootstrapping a fresh circuit can take a few seconds the first time.")
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, 70)
     }
 
     @State private var spin: Double = 0
@@ -179,23 +210,28 @@ struct PopoverView: View {
     // MARK: Sharing — the hero state
 
     private func sharingContent(_ url: String) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Share is live")
+                    .font(.system(size: 28, weight: .semibold))
+                Text("Send this address to the recipient. They will need [Tor Browser](https://www.torproject.org/download/) to open it.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                    .tint(Palette.accent)
+            }
             hero(url: url)
             filesSection
-            Text("Recipient needs [Tor Browser](https://www.torproject.org/download/)")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
-                .tint(Palette.accent)
         }
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
     private func hero(url: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            QRCodeView(value: url, size: 108, tint: Palette.accent)
+        HStack(alignment: .top, spacing: 16) {
+            QRCodeView(value: url, size: 132, tint: Palette.accent)
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("Share this address")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .kerning(0.6)
                     .textCase(.uppercase)
                     .foregroundStyle(.secondary)
@@ -206,39 +242,46 @@ struct PopoverView: View {
                     .truncationMode(.middle)
                     .textSelection(.enabled)
                     .foregroundStyle(.primary)
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.black.opacity(0.12))
+                    )
 
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Button {
                         copy(url)
                     } label: {
                         Label(copied ? "Copied" : "Copy", systemImage: copied ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 12, weight: .medium))
                             .frame(maxWidth: .infinity)
                     }
-                    .controlSize(.small)
+                    .controlSize(.regular)
                     .buttonStyle(.borderedProminent)
                     .tint(Palette.accent)
 
                     Button {
                         openInBrowser(url)
                     } label: {
-                        Image(systemName: "arrow.up.forward.app")
-                            .font(.system(size: 11, weight: .medium))
+                        Label("Open", systemImage: "arrow.up.forward.app")
+                            .font(.system(size: 12, weight: .medium))
                     }
-                    .controlSize(.small)
+                    .controlSize(.regular)
                     .buttonStyle(.bordered)
                     .help("Open in default browser")
                 }
+                .frame(maxWidth: .infinity)
             }
         }
-        .padding(12)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Palette.accentSoft)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Palette.panel)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Palette.accent.opacity(0.25), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Palette.panelStroke, lineWidth: 1)
         )
     }
 
@@ -262,7 +305,7 @@ struct PopoverView: View {
                     }
                 }
             }
-            .frame(maxHeight: 112)
+            .frame(maxHeight: 170)
         }
     }
 
@@ -275,7 +318,7 @@ struct PopoverView: View {
 
     // MARK: Footer
 
-    private var footer: some View {
+    private var bottomBar: some View {
         HStack(spacing: 8) {
             Button {
                 showingLog.toggle()
@@ -291,23 +334,10 @@ struct PopoverView: View {
             .foregroundStyle(.secondary)
 
             Spacer()
-
-            if isActive {
-                Button(role: .destructive) {
-                    Task { await ShareManager.shared.stop() }
-                } label: {
-                    Label("Stop Sharing", systemImage: "stop.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .padding(.horizontal, 8)
-                }
-                .controlSize(.regular)
-                .buttonStyle(.borderedProminent)
-                .tint(Palette.danger)
-            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 12)
+        .background(.bar)
         .overlay(Divider().opacity(0.4), alignment: .top)
     }
 
@@ -363,6 +393,11 @@ struct PopoverView: View {
         return false
     }
 
+    private var isError: Bool {
+        if case .error = state.status { return true }
+        return false
+    }
+
     private func pickFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
@@ -387,6 +422,42 @@ struct PopoverView: View {
     private func openInBrowser(_ urlString: String) {
         guard let url = URL(string: urlString) else { return }
         NSWorkspace.shared.open(url)
+    }
+
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        let fileProviders = providers.filter {
+            $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
+        }
+        guard !fileProviders.isEmpty else { return false }
+
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var urls: [URL] = []
+
+        for provider in fileProviders {
+            group.enter()
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                defer { group.leave() }
+                let url: URL?
+                if let data = item as? Data {
+                    url = URL(dataRepresentation: data, relativeTo: nil)
+                } else if let nsURL = item as? NSURL {
+                    url = nsURL as URL
+                } else {
+                    url = nil
+                }
+                guard let url, url.isFileURL else { return }
+                lock.lock()
+                urls.append(url)
+                lock.unlock()
+            }
+        }
+
+        group.notify(queue: .main) {
+            guard !urls.isEmpty else { return }
+            Task { await ShareManager.shared.start(files: urls) }
+        }
+        return true
     }
 }
 
@@ -458,5 +529,3 @@ private struct FileRow: View {
         }
     }
 }
-
-

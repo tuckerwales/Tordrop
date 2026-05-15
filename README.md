@@ -1,17 +1,22 @@
 <p align="center">
-  <img src="Resources/AppIcon.png" width="160" alt="TorDrop icon">
+  <img src="Resources/AppIcon.png" width="128" alt="TorDrop icon">
 </p>
 
 <h1 align="center">TorDrop</h1>
 
 <p align="center">
-  <i>Share files over the Tor network — from your macOS menu bar.</i>
+  <i>Share files over the Tor network — from a small native macOS app.</i>
 </p>
 
 <p align="center">
   Pick files, get a <code>.onion</code> URL, hand it off. No accounts, no third-party servers,
   no persistent onion keys. Built as a small native SwiftUI app with <code>tor</code> as its only
   external dependency.
+</p>
+
+<p align="center">
+  <img src="Resources/Screenshots/idle.png" width="390" alt="TorDrop idle window">
+  <img src="Resources/Screenshots/sharing.png" width="390" alt="TorDrop active share window">
 </p>
 
 ---
@@ -22,12 +27,14 @@
 File → local HTTP server (127.0.0.1:random) → tor → v3 onion service → Recipient
 ```
 
-1. You pick one or more files — drag them onto the menu bar icon, or click it and use the file picker.
+1. You pick one or more files — drag them into the TorDrop window, or use the file picker.
 2. TorDrop starts a minimal HTTP server on a random loopback port, listing the files under a random URL slug.
 3. TorDrop spawns `tor`, connects to its control port, and creates an ephemeral v3 hidden service (`ADD_ONION NEW:ED25519-V3 Flags=DiscardPK`) that forwards onion port 80 to the local HTTP port.
 4. You copy the `.onion` URL (or scan the in-app QR code with a phone) and send it to the recipient over any secure channel.
 5. The recipient opens it in Tor Browser and downloads.
 6. You click **Stop Sharing** and the onion service vanishes — the private key was never written to disk.
+
+While a share is starting or live, TorDrop also shows a temporary menu bar status icon. Clicking it brings the main window forward; dropping files on it starts a new share. When TorDrop is idle, the menu bar icon is hidden.
 
 ## Requirements
 
@@ -53,6 +60,8 @@ swift run -c release
 ```
 
 The first launch might prompt for network permissions (the local listener and the outbound connection `tor` makes). Local development builds are ad-hoc signed, so you may need to right-click → Open the first time.
+
+TorDrop is a regular macOS app: it appears in the Dock, has a standard app menu, and supports `Cmd-Q` to quit.
 
 ## Release signing
 
@@ -80,10 +89,12 @@ The GitHub release workflow will use Developer ID signing and notarization when 
 
 ```
 Sources/TorDrop/
-├── main.swift                # Entry point (accessory activation policy)
+├── main.swift                # Entry point (regular app activation policy)
 ├── AppDelegate.swift         # App lifecycle
-├── MenuBarController.swift   # NSStatusItem + NSPopover plumbing + icon
-├── PopoverView.swift         # SwiftUI popover
+├── MainWindowController.swift # Main app window
+├── MenuBarController.swift   # Active-share NSStatusItem + icon
+├── MenuBarDropView.swift     # File-drop overlay for the active-share menu bar icon
+├── MainView.swift            # SwiftUI app surface
 ├── QRCode.swift              # CoreImage QR code generator + view
 ├── ShareState.swift          # Observable state shared with the UI
 ├── ShareManager.swift        # Orchestrates FileServer + TorController

@@ -4,33 +4,13 @@ import Combine
 
 @MainActor
 final class MenuBarController: NSObject {
-    private let statusItem: NSStatusItem
-    private let popover: NSPopover
+    private var statusItem: NSStatusItem?
+    private let showMainWindow: () -> Void
     private var cancellables = Set<AnyCancellable>()
 
-    override init() {
-        self.statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        self.popover = NSPopover()
+    init(showMainWindow: @escaping () -> Void) {
+        self.showMainWindow = showMainWindow
         super.init()
-
-        popover.behavior = .transient
-        popover.contentSize = NSSize(width: 400, height: 520)
-        popover.contentViewController = NSHostingController(
-            rootView: PopoverView(onQuit: { NSApp.terminate(nil) })
-        )
-
-        if let button = statusItem.button {
-            let drop = MenuBarDropView(frame: button.bounds)
-            drop.autoresizingMask = [.width, .height]
-            drop.onClick = { [weak self] in self?.togglePopover(nil) }
-            drop.onDrop = { urls in
-                Task { @MainActor in
-                    await ShareManager.shared.start(files: urls)
-                }
-            }
-            button.addSubview(drop)
-        }
-        updateIcon(active: false)
 
         ShareState.shared.$status
             .receive(on: RunLoop.main)
@@ -40,16 +20,45 @@ final class MenuBarController: NSObject {
                 case .sharing, .starting: active = true
                 default: active = false
                 }
-                self?.updateIcon(active: active)
+                self?.setVisible(active)
             }
             .store(in: &cancellables)
     }
 
-    private func updateIcon(active: Bool) {
-        guard let button = statusItem.button else { return }
-        button.image = Self.onionGlyph(filled: active)
+    private func setVisible(_ visible: Bool) {
+        if visible {
+            if statusItem == nil {
+                installStatusItem()
+            }
+            updateIcon()
+        } else if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+            self.statusItem = nil
+        }
+    }
+
+    private func installStatusItem() {
+        let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        self.statusItem = statusItem
+        if let button = statusItem.button {
+            let drop = MenuBarDropView(frame: button.bounds)
+            drop.autoresizingMask = [.width, .height]
+            drop.onClick = { [weak self] in self?.showMainWindow() }
+            drop.onDrop = { urls in
+                Task { @MainActor in
+                    await ShareManager.shared.start(files: urls)
+                    self.showMainWindow()
+                }
+            }
+            button.addSubview(drop)
+        }
+    }
+
+    private func updateIcon() {
+        guard let button = statusItem?.button else { return }
+        button.image = Self.onionGlyph(filled: true)
         button.alphaValue = 1.0
-        button.toolTip = active ? "TorDrop — sharing" : "TorDrop"
+        button.toolTip = "TorDrop — sharing"
     }
 
     /// Template glyph purpose-built for 18pt: a drop-zone circle with an
@@ -105,16 +114,6 @@ final class MenuBarController: NSObject {
         }
         image.isTemplate = true
         return image
-    }
-
-    @objc private func togglePopover(_ sender: Any?) {
-        guard let button = statusItem.button else { return }
-        if popover.isShown {
-            popover.performClose(sender)
-        } else {
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            popover.contentViewController?.view.window?.makeKey()
-        }
     }
 
     func shutdown() {

@@ -4,10 +4,13 @@ APP_NAME   := TorDrop
 BUILD_DIR  := .build/release
 APP_BUNDLE := $(APP_NAME).app
 LOGO       := Resources/AppIcon.png
+ICONSET_SRC := Resources/AppIcon.iconset
+ICONSET_FILES := $(wildcard $(ICONSET_SRC)/icon_*.png)
 ICONSET    := .build/AppIcon.iconset
 ICNS       := .build/AppIcon.icns
 CODESIGN_IDENTITY ?= -
 CODESIGN_FLAGS := --force --deep --options runtime
+SWIFT_ENV := env CLANG_MODULE_CACHE_PATH=.build/ModuleCache
 
 ifneq ($(CODESIGN_IDENTITY),-)
 CODESIGN_FLAGS += --timestamp
@@ -20,19 +23,11 @@ build:
 
 icon: $(ICNS)
 
-$(ICNS): $(LOGO)
+$(ICNS): $(LOGO) $(ICONSET_FILES) Scripts/normalize_icon_pngs.swift
 	@rm -rf $(ICONSET)
 	@mkdir -p $(ICONSET)
-	sips -z 16 16     $(LOGO) --out $(ICONSET)/icon_16x16.png       >/dev/null
-	sips -z 32 32     $(LOGO) --out $(ICONSET)/icon_16x16@2x.png    >/dev/null
-	sips -z 32 32     $(LOGO) --out $(ICONSET)/icon_32x32.png       >/dev/null
-	sips -z 64 64     $(LOGO) --out $(ICONSET)/icon_32x32@2x.png    >/dev/null
-	sips -z 128 128   $(LOGO) --out $(ICONSET)/icon_128x128.png     >/dev/null
-	sips -z 256 256   $(LOGO) --out $(ICONSET)/icon_128x128@2x.png  >/dev/null
-	sips -z 256 256   $(LOGO) --out $(ICONSET)/icon_256x256.png     >/dev/null
-	sips -z 512 512   $(LOGO) --out $(ICONSET)/icon_256x256@2x.png  >/dev/null
-	sips -z 512 512   $(LOGO) --out $(ICONSET)/icon_512x512.png     >/dev/null
-	cp $(LOGO) $(ICONSET)/icon_512x512@2x.png
+	cp $(ICONSET_SRC)/icon_*.png $(ICONSET)/
+	$(SWIFT_ENV) swift Scripts/normalize_icon_pngs.swift $(ICONSET)/icon_*.png
 	iconutil -c icns $(ICONSET) -o $(ICNS)
 
 app: build icon
