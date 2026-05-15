@@ -100,7 +100,8 @@ Sources/TorDrop/
 ├── ShareManager.swift        # Orchestrates FileServer + TorController
 ├── FileServer.swift          # HTTP/1.1 server on Network.framework
 └── TorController.swift       # Tor subprocess + control protocol client
-Resources/AppIcon.png         # Source artwork — Makefile bakes AppIcon.icns
+Resources/AppIcon.png         # 1024x1024 source artwork for README + app icon
+Scripts/normalize_icon_pngs.swift # Strips PNG metadata before iconutil builds AppIcon.icns
 ```
 
 ## Security notes

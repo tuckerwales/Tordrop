@@ -3,8 +3,12 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
-guard CommandLine.arguments.count > 1 else {
-    fputs("Usage: normalize_icon_pngs.swift <png> [<png> ...]\n", stderr)
+let stripOnly = CommandLine.arguments.dropFirst().first == "--strip-only"
+let paths = CommandLine.arguments.dropFirst(stripOnly ? 2 : 1)
+let overscan: CGFloat = 1.035
+
+guard !paths.isEmpty else {
+    fputs("Usage: normalize_icon_pngs.swift [--strip-only] <png> [<png> ...]\n", stderr)
     exit(2)
 }
 
@@ -126,8 +130,13 @@ func stripMetadataChunks(from url: URL) throws {
     try output.write(to: url, options: .atomic)
 }
 
-for path in CommandLine.arguments.dropFirst() {
+for path in paths {
     let url = URL(fileURLWithPath: path)
+    if stripOnly {
+        try stripMetadataChunks(from: url)
+        continue
+    }
+
     guard
         let source = NSImage(contentsOf: url),
         let cgImage = source.cgImage(forProposedRect: nil, context: nil, hints: nil),
@@ -139,7 +148,7 @@ for path in CommandLine.arguments.dropFirst() {
     }
 
     let canvas = CGSize(width: bitmap.width, height: bitmap.height)
-    let scale = min(canvas.width / bounds.width, canvas.height / bounds.height)
+    let scale = min(canvas.width / bounds.width, canvas.height / bounds.height) * overscan
     let drawSize = CGSize(width: bounds.width * scale, height: bounds.height * scale)
     let drawRect = CGRect(
         x: (canvas.width - drawSize.width) / 2,
