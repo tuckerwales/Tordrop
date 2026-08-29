@@ -110,3 +110,7 @@ Scripts/normalize_icon_pngs.swift # Strips PNG metadata before iconutil builds A
 - **Random URL slug.** Files live under a `/<20 chars>/...` path so the raw onion address alone isn't a direct handle on them. Defense in depth, not a secret.
 - **Loopback-only HTTP.** The embedded server binds to `127.0.0.1`, so it is never reachable outside of tor.
 - **Scope.** TorDrop does not add anything beyond what Tor itself provides for recipient anonymity or integrity. For sensitive content, confirm the URL reached the intended recipient through a trusted channel.
+
+## License
+
+TorDrop is released under the [MIT License](LICENSE).
