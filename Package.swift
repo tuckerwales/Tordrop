@@ -8,6 +8,11 @@ let package = Package(
         .executableTarget(
             name: "TorDrop",
             path: "Sources/TorDrop"
+        ),
+        .testTarget(
+            name: "TorDropTests",
+            dependencies: ["TorDrop"],
+            path: "Tests/TorDropTests"
         )
     ]
 )

@@ -1,4 +1,4 @@
-.PHONY: all build app run clean icon sign
+.PHONY: all build test app run clean icon sign
 
 APP_NAME   := TorDrop
 BUILD_DIR  := .build/release
@@ -18,6 +18,9 @@ all: app
 
 build:
 	swift build -c release
+
+test:
+	swift test
 
 icon: $(ICNS)
 

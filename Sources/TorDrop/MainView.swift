@@ -16,6 +16,7 @@ struct MainView: View {
     @State private var showingLog = false
     @State private var copied = false
     @State private var isDropTarget = false
+    @State private var confirmingStop = false
     let onQuit: () -> Void
 
     var body: some View {
@@ -29,7 +30,16 @@ struct MainView: View {
             bottomBar
         }
         .frame(minWidth: 520, idealWidth: 720, minHeight: 500, idealHeight: 560)
+        .overlay(sharingDropHighlight)
         .onDrop(of: [UTType.fileURL.identifier], isTargeted: $isDropTarget, perform: handleDrop)
+        .alert("Stop sharing?", isPresented: $confirmingStop) {
+            Button("Stop Sharing", role: .destructive) { ShareManager.shared.stop() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(state.activeTransfers == 1
+                 ? "A download is still in progress. Stopping now will cut it off."
+                 : "\(state.activeTransfers) downloads are still in progress. Stopping now will cut them off.")
+        }
         .animation(.easeInOut(duration: 0.18), value: state.status)
         .animation(.easeInOut(duration: 0.18), value: showingLog)
         .animation(.easeInOut(duration: 0.12), value: isDropTarget)
@@ -45,11 +55,12 @@ struct MainView: View {
             Spacer()
             if isActive {
                 Button(role: .destructive) {
-                    Task { await ShareManager.shared.stop() }
+                    requestStop()
                 } label: {
-                    Label("Stop Sharing", systemImage: "stop.fill")
+                    Label(isStarting ? "Cancel" : "Stop Sharing", systemImage: "stop.fill")
                         .font(.system(size: 12, weight: .semibold))
                 }
+                .keyboardShortcut(".", modifiers: .command)
                 .controlSize(.regular)
                 .buttonStyle(.borderedProminent)
                 .tint(Palette.danger)
@@ -92,12 +103,12 @@ struct MainView: View {
         switch state.status {
         case .idle:
             idleContent
-        case .starting(let msg):
-            startingContent(msg)
+        case .starting(let msg, let progress):
+            startingContent(msg, progress: progress)
         case .sharing(let url):
             sharingContent(url)
         case .stopping:
-            startingContent("Stopping…")
+            startingContent("Stopping…", progress: nil)
         case .error(let msg):
             VStack(alignment: .leading, spacing: 12) {
                 errorBanner(msg)
@@ -115,7 +126,7 @@ struct MainView: View {
             VStack(spacing: 8) {
                 Text("Share files over Tor")
                     .font(.system(size: 28, weight: .semibold))
-                Text("Drop files into this window or choose them from your Mac.")
+                Text("Drop files or folders into this window, or choose them from your Mac.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -134,9 +145,9 @@ struct MainView: View {
                 }
 
                 Button {
-                    pickFiles()
+                    FilePicker.chooseFilesToShare()
                 } label: {
-                    Label("Choose Files...", systemImage: "folder")
+                    Label("Choose Files…", systemImage: "folder")
                         .font(.system(size: 14, weight: .semibold))
                         .frame(width: 220)
                 }
@@ -157,7 +168,7 @@ struct MainView: View {
                     )
             )
 
-            Text("Files stay on your Mac. Only someone with the generated URL can reach them — routed through Tor, no servers in between.")
+            Text("Files stay on your Mac. Only someone with the generated URL can reach them — routed through Tor, no servers in between. Folders are shared as .zip archives.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -170,22 +181,31 @@ struct MainView: View {
 
     // MARK: Starting — progress state
 
-    private func startingContent(_ msg: String) -> some View {
+    private func startingContent(_ msg: String, progress: Double?) -> some View {
         VStack(spacing: 18) {
             ZStack {
                 Circle()
                     .stroke(Palette.accentSoft, lineWidth: 3)
                     .frame(width: 92, height: 92)
-                Circle()
-                    .trim(from: 0, to: 0.35)
-                    .stroke(Palette.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
-                    .frame(width: 92, height: 92)
-                    .rotationEffect(.degrees(spin))
-                    .onAppear {
-                        withAnimation(.linear(duration: 1.6).repeatForever(autoreverses: false)) {
-                            spin = 360
-                        }
+                if let progress {
+                    Circle()
+                        .trim(from: 0, to: max(0.02, progress))
+                        .stroke(Palette.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                        .frame(width: 92, height: 92)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.easeInOut(duration: 0.3), value: progress)
+                } else {
+                    TimelineView(.animation) { context in
+                        let period = 1.6
+                        let phase = context.date.timeIntervalSinceReferenceDate
+                            .truncatingRemainder(dividingBy: period) / period
+                        Circle()
+                            .trim(from: 0, to: 0.35)
+                            .stroke(Palette.accent, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                            .frame(width: 92, height: 92)
+                            .rotationEffect(.degrees(phase * 360))
                     }
+                }
                 Image(systemName: "network")
                     .font(.system(size: 28, weight: .medium))
                     .foregroundStyle(Palette.accent)
@@ -195,6 +215,7 @@ struct MainView: View {
             Text(msg)
                 .font(.system(size: 14))
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
             Text("Bootstrapping a fresh circuit can take a few seconds the first time.")
                 .font(.system(size: 12))
                 .foregroundStyle(.tertiary)
@@ -204,8 +225,6 @@ struct MainView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 70)
     }
-
-    @State private var spin: Double = 0
 
     // MARK: Sharing — the hero state
 
@@ -269,7 +288,7 @@ struct MainView: View {
                     }
                     .controlSize(.regular)
                     .buttonStyle(.bordered)
-                    .help("Open in default browser")
+                    .help(Self.torBrowserURL != nil ? "Open in Tor Browser" : "Open in default browser (needs Tor to load)")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -297,11 +316,29 @@ struct MainView: View {
                 Text(summaryLine)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                Button {
+                    FilePicker.chooseFilesToShare()
+                } label: {
+                    Label("Add Files…", systemImage: "plus")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(Palette.accent)
+                .help("Add more files to this share. The address stays the same.")
             }
             ScrollView {
                 VStack(spacing: 4) {
                     ForEach(state.files) { file in
-                        FileRow(file: file)
+                        FileRow(file: file) {
+                            ShareManager.shared.remove(file)
+                        }
+                    }
+                    if state.files.isEmpty {
+                        Text("No files in this share. Add some, or drop them here.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
                     }
                 }
             }
@@ -313,7 +350,12 @@ struct MainView: View {
         let count = state.files.count
         let total = state.files.reduce(Int64(0)) { $0 + $1.size }
         let bytes = ByteCountFormatter.string(fromByteCount: total, countStyle: .file)
-        return count == 1 ? "1 file · \(bytes)" : "\(count) files · \(bytes)"
+        var line = count == 1 ? "1 file · \(bytes)" : "\(count) files · \(bytes)"
+        let active = state.activeTransfers
+        if active > 0 {
+            line += active == 1 ? " · 1 download in progress" : " · \(active) downloads in progress"
+        }
+        return line
     }
 
     // MARK: Footer
@@ -334,6 +376,17 @@ struct MainView: View {
             .foregroundStyle(.secondary)
 
             Spacer()
+
+            if showingLog {
+                Button("Copy Log") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(state.logText, forType: .string)
+                }
+                .buttonStyle(.borderless)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .disabled(state.logLines.isEmpty)
+            }
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 12)
@@ -345,22 +398,29 @@ struct MainView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
-                    ForEach(Array(state.logLines.enumerated()), id: \.offset) { idx, line in
-                        Text(line)
+                    ForEach(state.logLines) { line in
+                        Text(line.text)
                             .font(.system(size: 10, design: .monospaced))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
-                            .truncationMode(.head)
+                            .truncationMode(.tail)
+                            .textSelection(.enabled)
+                            .help(line.text)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .id(idx)
+                            .id(line.id)
                     }
                 }
                 .padding(10)
             }
             .frame(height: 110)
             .background(Color.black.opacity(0.18))
-            .onChange(of: state.logLines.count) { new in
-                proxy.scrollTo(new - 1, anchor: .bottom)
+            // Keyed on the last line's id, not the count: once the log is
+            // full the count stops changing but new lines keep arriving.
+            .onChange(of: state.logLines.last?.id) { id in
+                if let id { proxy.scrollTo(id, anchor: .bottom) }
+            }
+            .onAppear {
+                if let id = state.logLines.last?.id { proxy.scrollTo(id, anchor: .bottom) }
             }
         }
     }
@@ -374,6 +434,8 @@ struct MainView: View {
             Text(msg)
                 .font(.system(size: 11))
                 .foregroundStyle(.primary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -387,9 +449,15 @@ struct MainView: View {
 
     // MARK: Helpers
 
-    private var isActive: Bool {
-        if case .sharing = state.status { return true }
+    private var isActive: Bool { state.status.isActive }
+
+    private var isStarting: Bool {
         if case .starting = state.status { return true }
+        return false
+    }
+
+    private var isSharing: Bool {
+        if case .sharing = state.status { return true }
         return false
     }
 
@@ -398,15 +466,24 @@ struct MainView: View {
         return false
     }
 
-    private func pickFiles() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.prompt = "Share"
-        panel.message = "Choose one or more files to share over Tor"
-        if panel.runModal() == .OK {
-            Task { await ShareManager.shared.start(files: panel.urls) }
+    /// Outline shown when files are dragged over a live share. The idle
+    /// screen has its own drop zone.
+    @ViewBuilder
+    private var sharingDropHighlight: some View {
+        if isSharing && isDropTarget {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Palette.accent.opacity(0.75), style: StrokeStyle(lineWidth: 2, dash: [7, 5]))
+                .background(Palette.accentSoft.opacity(0.4))
+                .padding(6)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private func requestStop() {
+        if isSharing && state.activeTransfers > 0 {
+            confirmingStop = true
+        } else {
+            ShareManager.shared.stop()
         }
     }
 
@@ -419,12 +496,28 @@ struct MainView: View {
         }
     }
 
+    private static var torBrowserURL: URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: "org.torproject.torbrowser")
+    }
+
+    /// Opens the address in Tor Browser when it is installed; other browsers
+    /// cannot resolve .onion addresses.
     private func openInBrowser(_ urlString: String) {
         guard let url = URL(string: urlString) else { return }
-        NSWorkspace.shared.open(url)
+        if let torBrowser = Self.torBrowserURL {
+            NSWorkspace.shared.open([url], withApplicationAt: torBrowser,
+                                    configuration: NSWorkspace.OpenConfiguration(),
+                                    completionHandler: nil)
+        } else {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        switch state.status {
+        case .idle, .error, .sharing: break
+        case .starting, .stopping: return false
+        }
         let fileProviders = providers.filter {
             $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier)
         }
@@ -432,9 +525,9 @@ struct MainView: View {
 
         let group = DispatchGroup()
         let lock = NSLock()
-        var urls: [URL] = []
+        var urls: [(index: Int, url: URL)] = []
 
-        for provider in fileProviders {
+        for (index, provider) in fileProviders.enumerated() {
             group.enter()
             provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                 defer { group.leave() }
@@ -448,16 +541,41 @@ struct MainView: View {
                 }
                 guard let url, url.isFileURL else { return }
                 lock.lock()
-                urls.append(url)
+                urls.append((index, url))
                 lock.unlock()
             }
         }
 
         group.notify(queue: .main) {
-            guard !urls.isEmpty else { return }
-            Task { await ShareManager.shared.start(files: urls) }
+            // Callbacks finish in any order; keep the order of the drop.
+            let ordered = urls.sorted { $0.index < $1.index }.map { $0.url }
+            ShareManager.shared.share(ordered)
         }
         return true
+    }
+}
+
+/// Presents the open panel and shares (or adds) the chosen files.
+enum FilePicker {
+    @MainActor
+    static func chooseFilesToShare() {
+        let adding: Bool
+        switch ShareState.shared.status {
+        case .sharing: adding = true
+        case .idle, .error: adding = false
+        case .starting, .stopping: return
+        }
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = true
+        panel.prompt = adding ? "Add" : "Share"
+        panel.message = adding
+            ? "Choose files or folders to add to this share"
+            : "Choose files or folders to share over Tor. Folders are shared as .zip archives."
+        if panel.runModal() == .OK {
+            ShareManager.shared.share(panel.urls)
+        }
     }
 }
 
@@ -465,6 +583,8 @@ struct MainView: View {
 
 private struct FileRow: View {
     let file: SharedFile
+    let onRemove: () -> Void
+    @State private var hovering = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -477,7 +597,7 @@ private struct FileRow: View {
                     .foregroundStyle(Palette.accent)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(file.url.lastPathComponent)
+                Text(file.name)
                     .font(.system(size: 12))
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -486,6 +606,15 @@ private struct FileRow: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+            if file.activeTransfers > 0 {
+                HStack(spacing: 4) {
+                    ProgressView().controlSize(.mini)
+                    Text(file.activeTransfers == 1 ? "Sending" : "Sending ×\(file.activeTransfers)")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Palette.accent)
+                }
+                .help("A recipient is downloading this file")
+            }
             if file.downloads > 0 {
                 Text("\(file.downloads)×")
                     .font(.system(size: 10, weight: .semibold))
@@ -494,12 +623,23 @@ private struct FileRow: View {
                     .padding(.vertical, 2)
                     .background(Capsule().fill(Palette.good.opacity(0.18)))
                     .foregroundStyle(Palette.good)
-            } else {
+                    .help(file.downloads == 1 ? "Downloaded once" : "Downloaded \(file.downloads) times")
+            } else if file.activeTransfers == 0 {
                 Text("—")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
+                    .help("Not downloaded yet")
             }
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .opacity(hovering ? 1 : 0.35)
+            .help("Stop sharing this file")
         }
+        .onHover { hovering = $0 }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
         .background(

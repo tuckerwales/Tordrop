@@ -5,6 +5,7 @@ import AppKit
 /// handler since the subview would otherwise swallow them.
 final class MenuBarDropView: NSView {
     var onClick: () -> Void = {}
+    var onRightClick: () -> Void = {}
     var onDrop: ([URL]) -> Void = { _ in }
 
     override init(frame: NSRect) {
@@ -17,7 +18,15 @@ final class MenuBarDropView: NSView {
     // MARK: Clicks
 
     override func mouseDown(with event: NSEvent) {
-        onClick()
+        if event.modifierFlags.contains(.control) {
+            onRightClick()
+        } else {
+            onClick()
+        }
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        onRightClick()
     }
 
     // MARK: Drag

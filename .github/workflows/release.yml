@@ -17,6 +17,9 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
+      - name: Test
+        run: swift test
+
       - name: Import Developer ID certificate
         env:
           APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}

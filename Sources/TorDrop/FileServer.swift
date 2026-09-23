@@ -3,13 +3,23 @@ import Network
 import UniformTypeIdentifiers
 
 /// Minimal HTTP/1.1 server bound to 127.0.0.1 that serves an HTML index of
-/// shared files and streams individual file downloads. All paths live under a
-/// random URL slug so that the raw onion address alone is not a direct handle
-/// on the files.
+/// shared files and streams individual file downloads (with Range support so
+/// interrupted downloads can resume). All paths live under a random URL slug
+/// so that the raw onion address alone is not a direct handle on the files.
 final class FileServer {
     struct Entry {
+        /// Unique name the file is served under.
+        let name: String
         let url: URL
         let size: Int64
+    }
+
+    enum Event {
+        /// A GET for `name` started streaming.
+        case transferStarted(name: String)
+        /// A transfer ended. `completed` is true when the last byte of the
+        /// file was handed to the network.
+        case transferEnded(name: String, completed: Bool)
     }
 
     private(set) var port: UInt16 = 0
@@ -17,18 +27,25 @@ final class FileServer {
 
     private let listener: NWListener
     private let queue = DispatchQueue(label: "tordrop.fileserver", qos: .userInitiated)
-    private var entries: [String: Entry] = [:]      // keyed by filename
+    private var entries: [String: Entry] = [:]      // keyed by served name
     private let entriesLock = NSLock()
 
-    private let onDownload: (URL) -> Void
+    // Touched only on `queue`.
+    private var connections: [ObjectIdentifier: NWConnection] = [:]
+    private var stopped = false
+
+    private let onEvent: (Event) -> Void
     private let logHandler: (String) -> Void
 
-    init(files: [URL],
-         onDownload: @escaping (URL) -> Void,
+    private static let headerTimeout: TimeInterval = 30
+    private static let maxHeaderBytes = 64 * 1024
+    private static let chunkSize = 64 * 1024
+
+    init(onEvent: @escaping (Event) -> Void,
          logHandler: @escaping (String) -> Void) throws {
-        self.onDownload = onDownload
+        self.onEvent = onEvent
         self.logHandler = logHandler
-        self.urlSlug = Self.randomSlug(length: 20)
+        self.urlSlug = HTTPText.randomSlug(length: 20)
 
         let params = NWParameters.tcp
         params.allowLocalEndpointReuse = true
@@ -37,59 +54,116 @@ final class FileServer {
             port: .any
         )
         self.listener = try NWListener(using: params)
-
-        for url in files {
-            let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
-            let size = (attrs[.size] as? NSNumber)?.int64Value ?? 0
-            let name = Self.sanitize(filename: url.lastPathComponent, existing: entries)
-            entries[name] = Entry(url: url, size: size)
-        }
     }
 
-    func start() throws {
+    // MARK: Shared files
+
+    /// Adds files to the share and returns their entries. Throws if any file
+    /// cannot be read, in which case nothing is added.
+    @discardableResult
+    func add(files: [URL]) throws -> [Entry] {
+        var pending: [(URL, Int64)] = []
+        for url in files {
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                  !isDirectory.boolValue else {
+                throw CocoaError(.fileReadNoSuchFile, userInfo: [NSFilePathErrorKey: url.path])
+            }
+            guard FileManager.default.isReadableFile(atPath: url.path) else {
+                throw CocoaError(.fileReadNoPermission, userInfo: [NSFilePathErrorKey: url.path])
+            }
+            let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
+            pending.append((url, (attrs[.size] as? NSNumber)?.int64Value ?? 0))
+        }
+
+        entriesLock.lock()
+        defer { entriesLock.unlock() }
+        var added: [Entry] = []
+        for (url, size) in pending {
+            let name = HTTPText.uniqueFilename(url.lastPathComponent, existing: Set(entries.keys))
+            let entry = Entry(name: name, url: url, size: size)
+            entries[name] = entry
+            added.append(entry)
+        }
+        return added
+    }
+
+    func remove(name: String) {
+        entriesLock.lock()
+        entries[name] = nil
+        entriesLock.unlock()
+    }
+
+    // MARK: Lifecycle
+
+    func start() async throws {
         listener.newConnectionHandler = { [weak self] conn in
             self?.handle(connection: conn)
         }
 
-        let ready = DispatchSemaphore(value: 0)
-        var startError: Error?
-        listener.stateUpdateHandler = { [weak self] state in
-            switch state {
-            case .ready:
-                if let p = self?.listener.port?.rawValue {
-                    self?.port = p
-                    self?.log("HTTP listening on 127.0.0.1:\(p)")
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            // The handler runs on `queue`, so the flag needs no lock.
+            let resumed = MutableBox(false)
+            listener.stateUpdateHandler = { [weak self] state in
+                switch state {
+                case .ready:
+                    if let p = self?.listener.port?.rawValue {
+                        self?.port = p
+                        self?.log("HTTP listening on 127.0.0.1:\(p)")
+                    }
+                    if !resumed.value { resumed.value = true; continuation.resume() }
+                case .failed(let err):
+                    self?.log("HTTP listener failed: \(err)")
+                    if !resumed.value { resumed.value = true; continuation.resume(throwing: err) }
+                case .cancelled:
+                    if !resumed.value {
+                        resumed.value = true
+                        continuation.resume(throwing: CancellationError())
+                    }
+                default:
+                    break
                 }
-                ready.signal()
-            case .failed(let err):
-                startError = err
-                ready.signal()
+            }
+            listener.start(queue: queue)
+        }
+    }
+
+    /// Stops listening and drops every open connection, aborting in-flight
+    /// downloads.
+    func stop() {
+        listener.cancel()
+        queue.async { [self] in
+            stopped = true
+            for conn in connections.values { conn.cancel() }
+            connections.removeAll()
+        }
+    }
+
+    // MARK: Connection handling (on `queue`)
+
+    private func handle(connection conn: NWConnection) {
+        guard !stopped else { conn.cancel(); return }
+        let id = ObjectIdentifier(conn)
+        connections[id] = conn
+        conn.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .failed, .cancelled:
+                self?.connections[id] = nil
             default:
                 break
             }
         }
-        listener.start(queue: queue)
-
-        let result = ready.wait(timeout: .now() + 5)
-        if result == .timedOut {
-            throw NSError(domain: "FileServer", code: 1,
-                          userInfo: [NSLocalizedDescriptionKey: "Listener did not become ready."])
-        }
-        if let err = startError { throw err }
-    }
-
-    func stop() {
-        listener.cancel()
-    }
-
-    // MARK: Connection handling
-
-    private func handle(connection conn: NWConnection) {
         conn.start(queue: queue)
-        receiveRequest(conn: conn, accumulated: Data())
+
+        // Drop clients that never finish sending a request.
+        let gotRequest = MutableBox(false)
+        queue.asyncAfter(deadline: .now() + Self.headerTimeout) { [weak conn] in
+            if !gotRequest.value { conn?.cancel() }
+        }
+        receiveRequest(conn: conn, accumulated: Data()) { gotRequest.value = true }
     }
 
-    private func receiveRequest(conn: NWConnection, accumulated: Data) {
+    private func receiveRequest(conn: NWConnection, accumulated: Data, onRequest: @escaping () -> Void) {
         conn.receive(minimumIncompleteLength: 1, maximumLength: 16 * 1024) { [weak self] data, _, isComplete, error in
             guard let self = self else { conn.cancel(); return }
             if let error = error {
@@ -101,58 +175,52 @@ final class FileServer {
             if let data = data { buffer.append(data) }
 
             if let headerEnd = buffer.range(of: Data("\r\n\r\n".utf8)) {
+                onRequest()
                 let headerData = buffer.subdata(in: 0..<headerEnd.lowerBound)
-                if let headerStr = String(data: headerData, encoding: .utf8) {
-                    self.route(request: headerStr, on: conn)
+                if let raw = String(data: headerData, encoding: .utf8),
+                   let request = HTTPRequestHead(raw) {
+                    self.route(request, on: conn)
                 } else {
                     self.writeSimple(conn: conn, status: "400 Bad Request", body: "Bad Request")
                 }
             } else if isComplete {
                 conn.cancel()
-            } else if buffer.count > 64 * 1024 {
+            } else if buffer.count > Self.maxHeaderBytes {
+                onRequest()
                 self.writeSimple(conn: conn, status: "431 Request Header Fields Too Large",
                                  body: "Headers too large")
             } else {
-                self.receiveRequest(conn: conn, accumulated: buffer)
+                self.receiveRequest(conn: conn, accumulated: buffer, onRequest: onRequest)
             }
         }
     }
 
-    private func route(request: String, on conn: NWConnection) {
-        let lines = request.components(separatedBy: "\r\n")
-        guard let requestLine = lines.first else {
-            writeSimple(conn: conn, status: "400 Bad Request", body: "Bad Request")
+    private func route(_ request: HTTPRequestHead, on conn: NWConnection) {
+        guard request.method == "GET" || request.method == "HEAD" else {
+            writeSimple(conn: conn, status: "405 Method Not Allowed", body: "Method Not Allowed",
+                        extraHeaders: ["Allow: GET, HEAD"])
             return
         }
-        let parts = requestLine.split(separator: " ")
-        guard parts.count >= 2 else {
-            writeSimple(conn: conn, status: "400 Bad Request", body: "Bad Request")
-            return
-        }
-        let method = String(parts[0])
-        let rawPath = String(parts[1])
-
-        guard method == "GET" || method == "HEAD" else {
-            writeSimple(conn: conn, status: "405 Method Not Allowed", body: "Method Not Allowed")
-            return
-        }
-
-        let path = rawPath.removingPercentEncoding ?? rawPath
+        let headOnly = request.method == "HEAD"
         let prefix = "/\(urlSlug)"
 
-        guard path == prefix || path.hasPrefix(prefix + "/") else {
+        if request.path == prefix {
+            // Relative links on the index only resolve under the trailing slash.
+            writeSimple(conn: conn, status: "301 Moved Permanently", body: "Moved",
+                        extraHeaders: ["Location: \(prefix)/"])
+            return
+        }
+        guard request.path.hasPrefix(prefix + "/") else {
             writeSimple(conn: conn, status: "404 Not Found", body: "Not Found")
             return
         }
 
-        let remainder = String(path.dropFirst(prefix.count))
-        if remainder.isEmpty || remainder == "/" {
-            serveIndex(on: conn, headOnly: method == "HEAD")
+        let filename = String(request.path.dropFirst(prefix.count + 1))
+        if filename.isEmpty {
+            serveIndex(on: conn, headOnly: headOnly)
             return
         }
 
-        // remainder starts with "/"
-        let filename = String(remainder.dropFirst())
         entriesLock.lock()
         let entry = entries[filename]
         entriesLock.unlock()
@@ -161,50 +229,81 @@ final class FileServer {
             writeSimple(conn: conn, status: "404 Not Found", body: "Not Found")
             return
         }
-        serveFile(entry: entry, filename: filename, on: conn, headOnly: method == "HEAD")
+        serveFile(entry: entry, request: request, on: conn, headOnly: headOnly)
     }
 
     // MARK: Responses
 
+    private static let commonHeaders = [
+        "Cache-Control: no-store",
+        "Referrer-Policy: no-referrer",
+        "X-Content-Type-Options: nosniff",
+        "X-Frame-Options: DENY",
+        "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'",
+        "Connection: close"
+    ]
+
+    private static func responseHead(status: String, headers: [String]) -> Data {
+        let lines = ["HTTP/1.1 \(status)"] + headers + commonHeaders
+        return Data((lines.joined(separator: "\r\n") + "\r\n\r\n").utf8)
+    }
+
     private func serveIndex(on conn: NWConnection, headOnly: Bool) {
         entriesLock.lock()
-        let snapshot = entries
+        let snapshot = Array(entries.values)
         entriesLock.unlock()
 
+        let sorted = snapshot.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
         var rows = ""
-        let sorted = snapshot.sorted { $0.key.localizedStandardCompare($1.key) == .orderedAscending }
-        for (name, entry) in sorted {
-            let escaped = Self.htmlEscape(name)
-            let href = Self.urlEncode(name)
+        for entry in sorted {
             rows += """
             <tr>
-              <td><a href="\(href)" download>\(escaped)</a></td>
+              <td><a href="\(HTTPText.htmlEscape(HTTPText.relativeHref(for: entry.name)))" download>\(HTTPText.htmlEscape(entry.name))</a></td>
               <td class="size">\(Self.formatBytes(entry.size))</td>
             </tr>
+
             """
         }
+        if sorted.isEmpty {
+            rows = "<tr><td colspan=\"2\" class=\"empty\">No files are being shared right now.</td></tr>"
+        }
+        let total = sorted.reduce(Int64(0)) { $0 + $1.size }
+        let summary = sorted.count == 1
+            ? "1 file · \(Self.formatBytes(total))"
+            : "\(sorted.count) files · \(Self.formatBytes(total))"
 
         let html = """
         <!doctype html>
-        <html>
+        <html lang="en">
         <head>
           <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <meta name="referrer" content="no-referrer">
           <title>TorDrop</title>
           <style>
             body { font-family: -apple-system, system-ui, sans-serif; max-width: 640px;
-                   margin: 4rem auto; padding: 0 1rem; color: #222; }
+                   margin: 4rem auto; padding: 0 1rem; color: #222; background: #fff; }
             h1 { font-size: 1.4rem; }
             .hint { color: #666; font-size: 0.9rem; }
             table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
-            th, td { padding: 0.6rem 0.4rem; border-bottom: 1px solid #eee; text-align: left; }
-            td.size, th.size { text-align: right; color: #666; font-variant-numeric: tabular-nums; }
+            th, td { padding: 0.6rem 0.4rem; border-bottom: 1px solid #eee; text-align: left;
+                     overflow-wrap: anywhere; }
+            td.size, th.size { text-align: right; color: #666; font-variant-numeric: tabular-nums;
+                               white-space: nowrap; }
+            td.empty { color: #666; text-align: center; }
             a { color: #5b3eb1; text-decoration: none; }
             a:hover { text-decoration: underline; }
+            @media (prefers-color-scheme: dark) {
+              body { color: #eee; background: #1c1b22; }
+              th, td { border-bottom-color: #333; }
+              .hint, td.size, th.size, td.empty { color: #aaa; }
+              a { color: #b9a4ff; }
+            }
           </style>
         </head>
         <body>
           <h1>TorDrop</h1>
-          <p class="hint">Shared files — click to download.</p>
+          <p class="hint">Shared files: click to download. \(summary)</p>
           <table>
             <thead><tr><th>File</th><th class="size">Size</th></tr></thead>
             <tbody>\(rows)</tbody>
@@ -214,88 +313,137 @@ final class FileServer {
         """
 
         let body = Data(html.utf8)
-        var header = "HTTP/1.1 200 OK\r\n"
-        header += "Content-Type: text/html; charset=utf-8\r\n"
-        header += "Content-Length: \(body.count)\r\n"
-        header += "Connection: close\r\n\r\n"
-
-        conn.send(content: Data(header.utf8), completion: .contentProcessed { _ in
-            if headOnly {
-                conn.send(content: nil, isComplete: true, completion: .contentProcessed { _ in
-                    conn.cancel()
-                })
-            } else {
-                conn.send(content: body, isComplete: true,
-                          completion: .contentProcessed { _ in conn.cancel() })
-            }
-        })
+        let head = Self.responseHead(status: "200 OK", headers: [
+            "Content-Type: text/html; charset=utf-8",
+            "Content-Length: \(body.count)"
+        ])
+        var payload = head
+        if !headOnly { payload.append(body) }
+        conn.send(content: payload, isComplete: true,
+                  completion: .contentProcessed { _ in conn.cancel() })
     }
 
-    private func serveFile(entry: Entry, filename: String, on conn: NWConnection, headOnly: Bool) {
-        guard let handle = try? FileHandle(forReadingFrom: entry.url) else {
+    private func serveFile(entry: Entry, request: HTTPRequestHead, on conn: NWConnection, headOnly: Bool) {
+        guard let handle = try? FileHandle(forReadingFrom: entry.url),
+              let size = try? handle.seekToEnd() else {
+            log("Cannot open \(entry.name)")
             writeSimple(conn: conn, status: "500 Internal Server Error", body: "Cannot open file")
             return
         }
+        // Size at serve time, so a file that changed since it was shared still
+        // gets an accurate Content-Length.
+        let fileSize = Int64(size)
+        let etag = Self.etag(for: entry.url, size: fileSize)
 
-        let mime = Self.mimeType(for: entry.url)
-        let dispositionName = Self.rfc5987(filename)
-        var header = "HTTP/1.1 200 OK\r\n"
-        header += "Content-Type: \(mime)\r\n"
-        header += "Content-Length: \(entry.size)\r\n"
-        header += "Content-Disposition: attachment; filename*=UTF-8''\(dispositionName)\r\n"
-        header += "Connection: close\r\n\r\n"
+        var range = HTTPByteRange.evaluate(request.headers["range"], size: fileSize)
+        if let ifRange = request.headers["if-range"], ifRange != etag {
+            range = .full
+        }
 
-        onDownload(entry.url)
-        log("→ \(filename) (\(entry.size) bytes)")
+        var headers = [
+            "Content-Type: \(Self.mimeType(for: entry.url))",
+            "Content-Disposition: \(HTTPText.contentDisposition(filename: entry.name))",
+            "Accept-Ranges: bytes",
+            "ETag: \(etag)"
+        ]
+        let status: String
+        let start: Int64
+        let end: Int64
+        switch range {
+        case .unsatisfiable:
+            try? handle.close()
+            writeSimple(conn: conn, status: "416 Range Not Satisfiable", body: "Range Not Satisfiable",
+                        extraHeaders: ["Content-Range: bytes */\(fileSize)"])
+            return
+        case .full:
+            status = "200 OK"
+            start = 0
+            end = fileSize - 1
+        case .partial(let s, let e):
+            status = "206 Partial Content"
+            start = s
+            end = e
+            headers.append("Content-Range: bytes \(s)-\(e)/\(fileSize)")
+        }
+        let length = max(0, end - start + 1)
+        headers.append("Content-Length: \(length)")
+        let head = Self.responseHead(status: status, headers: headers)
 
-        conn.send(content: Data(header.utf8), completion: .contentProcessed { [weak self] err in
-            if err != nil { try? handle.close(); conn.cancel(); return }
-            if headOnly {
-                try? handle.close()
-                conn.send(content: nil, isComplete: true, completion: .contentProcessed { _ in
-                    conn.cancel()
-                })
+        if headOnly {
+            try? handle.close()
+            conn.send(content: head, isComplete: true, completion: .contentProcessed { _ in conn.cancel() })
+            return
+        }
+
+        do {
+            try handle.seek(toOffset: UInt64(start))
+        } catch {
+            try? handle.close()
+            writeSimple(conn: conn, status: "500 Internal Server Error", body: "Cannot read file")
+            return
+        }
+
+        let rangeNote = range == .full ? "" : " [bytes \(start)-\(end)]"
+        log("→ \(entry.name) (\(length) bytes)\(rangeNote)")
+        onEvent(.transferStarted(name: entry.name))
+        let reachesEOF = end == fileSize - 1
+
+        conn.send(content: head, completion: .contentProcessed { [self] err in
+            if err != nil {
+                finishTransfer(entry.name, handle: handle, conn: conn, completed: false)
                 return
             }
-            self?.streamFile(handle: handle, on: conn)
+            streamFile(name: entry.name, handle: handle, remaining: length, reachesEOF: reachesEOF, on: conn)
         })
     }
 
-    private func streamFile(handle: FileHandle, on conn: NWConnection) {
-        let chunkSize = 64 * 1024
-        let data: Data
-        do {
-            data = try handle.read(upToCount: chunkSize) ?? Data()
-        } catch {
-            log("read error: \(error)")
-            try? handle.close()
-            conn.cancel()
-            return
-        }
-        if data.isEmpty {
-            try? handle.close()
-            conn.send(content: nil, isComplete: true, completion: .contentProcessed { _ in
-                conn.cancel()
+    private func streamFile(name: String, handle: FileHandle, remaining: Int64, reachesEOF: Bool,
+                            on conn: NWConnection) {
+        if remaining <= 0 {
+            conn.send(content: nil, isComplete: true, completion: .contentProcessed { [self] err in
+                finishTransfer(name, handle: handle, conn: conn, completed: err == nil && reachesEOF)
             })
             return
         }
-        conn.send(content: data, isComplete: false, completion: .contentProcessed { [weak self] err in
+
+        let data: Data
+        do {
+            data = try handle.read(upToCount: Int(min(Int64(Self.chunkSize), remaining))) ?? Data()
+        } catch {
+            log("read error: \(error)")
+            finishTransfer(name, handle: handle, conn: conn, completed: false)
+            return
+        }
+        if data.isEmpty {
+            // The file shrank since the headers were sent; the client will see
+            // a short body and can retry.
+            log("\(name) ended early; was it modified while shared?")
+            finishTransfer(name, handle: handle, conn: conn, completed: false)
+            return
+        }
+        conn.send(content: data, isComplete: false, completion: .contentProcessed { [self] err in
             if err != nil {
-                try? handle.close()
-                conn.cancel()
+                finishTransfer(name, handle: handle, conn: conn, completed: false)
                 return
             }
-            self?.streamFile(handle: handle, on: conn)
+            streamFile(name: name, handle: handle, remaining: remaining - Int64(data.count),
+                       reachesEOF: reachesEOF, on: conn)
         })
     }
 
-    private func writeSimple(conn: NWConnection, status: String, body: String) {
+    private func finishTransfer(_ name: String, handle: FileHandle, conn: NWConnection, completed: Bool) {
+        try? handle.close()
+        conn.cancel()
+        onEvent(.transferEnded(name: name, completed: completed))
+        if !completed { log("Transfer of \(name) did not finish.") }
+    }
+
+    private func writeSimple(conn: NWConnection, status: String, body: String, extraHeaders: [String] = []) {
         let bodyData = Data(body.utf8)
-        var header = "HTTP/1.1 \(status)\r\n"
-        header += "Content-Type: text/plain; charset=utf-8\r\n"
-        header += "Content-Length: \(bodyData.count)\r\n"
-        header += "Connection: close\r\n\r\n"
-        var payload = Data(header.utf8)
+        var payload = Self.responseHead(status: status, headers: [
+            "Content-Type: text/plain; charset=utf-8",
+            "Content-Length: \(bodyData.count)"
+        ] + extraHeaders)
         payload.append(bodyData)
         conn.send(content: payload, isComplete: true,
                   completion: .contentProcessed { _ in conn.cancel() })
@@ -305,25 +453,16 @@ final class FileServer {
 
     // MARK: Helpers
 
-    private static func randomSlug(length: Int) -> String {
-        let alphabet = Array("abcdefghijklmnopqrstuvwxyz0123456789")
-        var bytes = [UInt8](repeating: 0, count: length)
-        _ = SecRandomCopyBytes(kSecRandomDefault, length, &bytes)
-        return String(bytes.map { alphabet[Int($0) % alphabet.count] })
-    }
-
-    private static func sanitize(filename raw: String, existing: [String: Entry]) -> String {
-        let cleaned = raw.replacingOccurrences(of: "/", with: "_")
-            .replacingOccurrences(of: "\\", with: "_")
-        if existing[cleaned] == nil { return cleaned }
-        var i = 2
-        let ext = (cleaned as NSString).pathExtension
-        let base = (cleaned as NSString).deletingPathExtension
-        while true {
-            let candidate = ext.isEmpty ? "\(base) (\(i))" : "\(base) (\(i)).\(ext)"
-            if existing[candidate] == nil { return candidate }
-            i += 1
-        }
+    private static func etag(for url: URL, size: Int64) -> String {
+        // Hasher is randomly seeded per process, so the tag reveals nothing
+        // about the file's timestamps but still changes if the file does.
+        let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?
+            .contentModificationDate?.timeIntervalSinceReferenceDate ?? 0
+        var hasher = Hasher()
+        hasher.combine(url.path)
+        hasher.combine(size)
+        hasher.combine(modified)
+        return "\"\(String(UInt64(bitPattern: Int64(hasher.finalize())), radix: 16))\""
     }
 
     private static func mimeType(for url: URL) -> String {
@@ -334,26 +473,14 @@ final class FileServer {
         return "application/octet-stream"
     }
 
-    private static func htmlEscape(_ s: String) -> String {
-        s.replacingOccurrences(of: "&", with: "&amp;")
-         .replacingOccurrences(of: "<", with: "&lt;")
-         .replacingOccurrences(of: ">", with: "&gt;")
-         .replacingOccurrences(of: "\"", with: "&quot;")
-    }
-
-    private static func urlEncode(_ s: String) -> String {
-        s.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? s
-    }
-
-    private static func rfc5987(_ s: String) -> String {
-        var allowed = CharacterSet.alphanumerics
-        allowed.insert(charactersIn: "-._~")
-        return s.addingPercentEncoding(withAllowedCharacters: allowed) ?? s
-    }
-
     private static func formatBytes(_ n: Int64) -> String {
-        let f = ByteCountFormatter()
-        f.countStyle = .file
-        return f.string(fromByteCount: n)
+        ByteCountFormatter.string(fromByteCount: n, countStyle: .file)
     }
+}
+
+/// Reference cell for state shared between callbacks that all run on the
+/// same serial queue (a captured `var` is rejected in `@Sendable` closures).
+final class MutableBox<Value> {
+    var value: Value
+    init(_ value: Value) { self.value = value }
 }

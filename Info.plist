@@ -24,5 +24,26 @@
     <true/>
     <key>NSSupportsAutomaticTermination</key>
     <false/>
+    <key>NSSupportsSuddenTermination</key>
+    <false/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.utilities</string>
+    <key>NSHumanReadableCopyright</key>
+    <string>Released under the MIT License.</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Any File or Folder</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.item</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
