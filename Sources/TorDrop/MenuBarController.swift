@@ -15,22 +15,17 @@ final class MenuBarController: NSObject {
         ShareState.shared.$status
             .receive(on: RunLoop.main)
             .sink { [weak self] status in
-                let active: Bool
-                switch status {
-                case .sharing, .starting: active = true
-                default: active = false
-                }
-                self?.setVisible(active)
+                self?.update(for: status)
             }
             .store(in: &cancellables)
     }
 
-    private func setVisible(_ visible: Bool) {
-        if visible {
+    private func update(for status: ShareStatus) {
+        if status.isActive {
             if statusItem == nil {
                 installStatusItem()
             }
-            updateIcon()
+            updateIcon(for: status)
         } else if let statusItem {
             NSStatusBar.system.removeStatusItem(statusItem)
             self.statusItem = nil
@@ -44,25 +39,65 @@ final class MenuBarController: NSObject {
             let drop = MenuBarDropView(frame: button.bounds)
             drop.autoresizingMask = [.width, .height]
             drop.onClick = { [weak self] in self?.showMainWindow() }
-            drop.onDrop = { urls in
-                Task { @MainActor in
-                    await ShareManager.shared.start(files: urls)
-                    self.showMainWindow()
-                }
+            drop.onRightClick = { [weak self] in self?.showMenu() }
+            drop.onDrop = { [weak self] urls in
+                // Adds to the live share, keeping its address.
+                ShareManager.shared.share(urls)
+                self?.showMainWindow()
             }
             button.addSubview(drop)
         }
     }
 
-    private func updateIcon() {
+    private func updateIcon(for status: ShareStatus) {
         guard let button = statusItem?.button else { return }
-        button.image = Self.onionGlyph(filled: true)
+        let live: Bool
+        if case .sharing = status { live = true } else { live = false }
+        button.image = Self.onionGlyph(filled: live)
         button.alphaValue = 1.0
-        button.toolTip = "TorDrop — sharing"
+        button.toolTip = live
+            ? "TorDrop: sharing. Drop files here to add them, right-click for options."
+            : "TorDrop: connecting…"
     }
 
+    private func showMenu() {
+        guard let button = statusItem?.button else { return }
+        let menu = NSMenu()
+
+        let show = NSMenuItem(title: "Show TorDrop", action: #selector(showWindowAction), keyEquivalent: "")
+        show.target = self
+        menu.addItem(show)
+
+        if case .sharing(let url) = ShareState.shared.status {
+            let copy = NSMenuItem(title: "Copy Address", action: #selector(copyAddressAction), keyEquivalent: "")
+            copy.target = self
+            copy.representedObject = url
+            menu.addItem(copy)
+        }
+
+        menu.addItem(.separator())
+        let isStarting: Bool
+        if case .starting = ShareState.shared.status { isStarting = true } else { isStarting = false }
+        let stop = NSMenuItem(title: isStarting ? "Cancel" : "Stop Sharing",
+                              action: #selector(stopAction), keyEquivalent: "")
+        stop.target = self
+        menu.addItem(stop)
+
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 4), in: button)
+    }
+
+    @objc private func showWindowAction() { showMainWindow() }
+
+    @objc private func copyAddressAction(_ sender: NSMenuItem) {
+        guard let url = sender.representedObject as? String else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(url, forType: .string)
+    }
+
+    @objc private func stopAction() { ShareManager.shared.stop() }
+
     /// Template glyph purpose-built for 18pt: a drop-zone circle with an
-    /// upload arrow. Dashed circle when idle, solid when actively sharing.
+    /// upload arrow. Dashed circle while connecting, solid when live.
     private static func onionGlyph(filled active: Bool) -> NSImage {
         let canvas: CGFloat = 22
         let image = NSImage(size: NSSize(width: canvas, height: canvas), flipped: false) { rect in
@@ -114,11 +149,5 @@ final class MenuBarController: NSObject {
         }
         image.isTemplate = true
         return image
-    }
-
-    func shutdown() {
-        Task { @MainActor in
-            await ShareManager.shared.stop()
-        }
     }
 }

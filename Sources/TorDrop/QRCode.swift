@@ -4,7 +4,14 @@ import CoreImage.CIFilterBuiltins
 import AppKit
 
 enum QRCode {
+    private static let context = CIContext(options: [.useSoftwareRenderer: false])
+    private static var cache: (value: String, image: NSImage)?
+
+    /// Renders `string` as a QR code bitmap. The last result is cached, since
+    /// SwiftUI re-evaluates the view on every state change (e.g. log lines).
     static func image(from string: String, scale: CGFloat = 8) -> NSImage? {
+        if let cache, cache.value == string { return cache.image }
+
         let filter = CIFilter.qrCodeGenerator()
         filter.message = Data(string.utf8)
         filter.correctionLevel = "M"
@@ -12,9 +19,11 @@ enum QRCode {
         let transformed = output.transformed(
             by: CGAffineTransform(scaleX: scale, y: scale)
         )
-        let rep = NSCIImageRep(ciImage: transformed)
-        let image = NSImage(size: rep.size)
-        image.addRepresentation(rep)
+        guard let cgImage = context.createCGImage(transformed, from: transformed.extent) else {
+            return nil
+        }
+        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+        cache = (string, image)
         return image
     }
 }
