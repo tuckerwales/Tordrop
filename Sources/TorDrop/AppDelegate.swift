@@ -55,12 +55,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: Menus
 
-    @objc private func chooseFiles(_ sender: Any?) {
+    @MainActor @objc private func chooseFiles(_ sender: Any?) {
         mainWindowController?.show()
         FilePicker.chooseFilesToShare()
     }
 
-    @objc private func showMainWindow(_ sender: Any?) {
+    @MainActor @objc private func showMainWindow(_ sender: Any?) {
         mainWindowController?.show()
     }
 

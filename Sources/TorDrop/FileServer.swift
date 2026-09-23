@@ -102,7 +102,8 @@ final class FileServer {
         }
 
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            var resumed = false
+            // The handler runs on `queue`, so the flag needs no lock.
+            let resumed = MutableBox(false)
             listener.stateUpdateHandler = { [weak self] state in
                 switch state {
                 case .ready:
@@ -110,12 +111,15 @@ final class FileServer {
                         self?.port = p
                         self?.log("HTTP listening on 127.0.0.1:\(p)")
                     }
-                    if !resumed { resumed = true; continuation.resume() }
+                    if !resumed.value { resumed.value = true; continuation.resume() }
                 case .failed(let err):
                     self?.log("HTTP listener failed: \(err)")
-                    if !resumed { resumed = true; continuation.resume(throwing: err) }
+                    if !resumed.value { resumed.value = true; continuation.resume(throwing: err) }
                 case .cancelled:
-                    if !resumed { resumed = true; continuation.resume(throwing: CancellationError()) }
+                    if !resumed.value {
+                        resumed.value = true
+                        continuation.resume(throwing: CancellationError())
+                    }
                 default:
                     break
                 }
@@ -152,11 +156,11 @@ final class FileServer {
         conn.start(queue: queue)
 
         // Drop clients that never finish sending a request.
-        var gotRequest = false
+        let gotRequest = MutableBox(false)
         queue.asyncAfter(deadline: .now() + Self.headerTimeout) { [weak conn] in
-            if !gotRequest { conn?.cancel() }
+            if !gotRequest.value { conn?.cancel() }
         }
-        receiveRequest(conn: conn, accumulated: Data()) { gotRequest = true }
+        receiveRequest(conn: conn, accumulated: Data()) { gotRequest.value = true }
     }
 
     private func receiveRequest(conn: NWConnection, accumulated: Data, onRequest: @escaping () -> Void) {
@@ -472,4 +476,11 @@ final class FileServer {
     private static func formatBytes(_ n: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: n, countStyle: .file)
     }
+}
+
+/// Reference cell for state shared between callbacks that all run on the
+/// same serial queue (a captured `var` is rejected in `@Sendable` closures).
+final class MutableBox<Value> {
+    var value: Value
+    init(_ value: Value) { self.value = value }
 }

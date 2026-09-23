@@ -265,19 +265,22 @@ final class TorController {
     /// A pipe whose output is forwarded to the log one line at a time.
     private func forwardLines(prefix: String) -> Pipe {
         let pipe = Pipe()
-        var pending = Data()
+        // Handler invocations are serialized, so the buffer needs no lock.
+        let pending = MutableBox(Data())
         pipe.fileHandleForReading.readabilityHandler = { [weak self] fh in
             let data = fh.availableData
             guard !data.isEmpty else {
                 // EOF: without this the handler is re-invoked in a busy loop.
                 fh.readabilityHandler = nil
-                if !pending.isEmpty { self?.log("\(prefix): \(String(decoding: pending, as: UTF8.self))") }
+                if !pending.value.isEmpty {
+                    self?.log("\(prefix): \(String(decoding: pending.value, as: UTF8.self))")
+                }
                 return
             }
-            pending.append(data)
-            while let newline = pending.firstIndex(of: UInt8(ascii: "\n")) {
-                let line = String(decoding: pending[pending.startIndex..<newline], as: UTF8.self)
-                pending.removeSubrange(pending.startIndex...newline)
+            pending.value.append(data)
+            while let newline = pending.value.firstIndex(of: UInt8(ascii: "\n")) {
+                let line = String(decoding: pending.value[pending.value.startIndex..<newline], as: UTF8.self)
+                pending.value.removeSubrange(pending.value.startIndex...newline)
                 if !line.isEmpty { self?.log("\(prefix): \(line)") }
             }
         }
